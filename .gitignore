@@ -1,0 +1,8 @@
+Binaries/
+Intermediate/
+Saved/
+obj/
+OUTPUT/
+*.suo
+*.user
+/DerivedDataCache
