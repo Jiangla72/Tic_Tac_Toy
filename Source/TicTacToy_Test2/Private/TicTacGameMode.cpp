@@ -1,17 +1,25 @@
-// Copyright 2025
+﻿// Copyright 2025
 
 
 #include "TicTacGameMode.h"
 #include "TicTacGameConfig.h"
 #include "TicTacGameState.h"
+#include "TicTacPlayerController.h"
+#include "TicTacBoard.h"
+#include "TicTacCameraPawn.h"
+#include "Kismet/GameplayStatics.h"
 
 ATicTacGameMode::ATicTacGameMode()
 {
-    CurrentPlayer = EPlayerType::Player1;
+	//基类成员
+	GameStateClass = ATicTacGameState::StaticClass();
+	PlayerControllerClass = ATicTacPlayerController::StaticClass();
+	PrimaryActorTick.bCanEverTick = true;
+
+	CurrentPlayer = EPlayerType::Player1;
     TurnCount = 0;
     bIsGameActive = false;
     GameConfig = nullptr;
-	GameStateClass = ATicTacGameState::StaticClass();
 }
 
 void ATicTacGameMode::ResetData()
@@ -24,17 +32,73 @@ void ATicTacGameMode::ResetData()
 void ATicTacGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (GameConfig == nullptr)
+	if (!GameConfig)
 	{
-		//FString ConfigPath = FPaths::ProjectContentDir() + TEXT("");
-		FString ConfigPath = TEXT("/Game/Data/DA_GameConfig_Default.DA_GameConfig_Default");
-		GameConfig = Cast<UTicTacGameConfig>(StaticLoadObject(UTicTacGameConfig::StaticClass(), nullptr, *ConfigPath));
-		if (GameConfig!=nullptr && GameConfig->IsValidConfig())
+		GameConfig = LoadObject<UTicTacGameConfig>(nullptr, TEXT("/Game/Config/DA_GameConfig_Default.DA_GameConfig_Default"));
+
+		if (GameConfig)
 		{
-			
+			UE_LOG(LogTemp, Log, TEXT("Load Default GameConfig Success"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Load Default GameConfig Faild!"));
+			return;
 		}
 	}
+
+	if (!GameConfig->IsValidConfig())
+	{
+		UE_LOG(LogTemp, Error, TEXT("GameConfig IsNotValid"));
+		return;
+	}
+
+	ATicTacGameState* TicTacGameState = GetTicTacGameState();
+	if (!TicTacGameState)
+	{
+		UE_LOG(LogTemp, Error, TEXT("cant find game state"));
+		return;
+	}
+
+	TicTacGameState->SetPlayerName(EPlayerType::Player1, GameConfig->Player1Name);
+	TicTacGameState->SetPlayerName(EPlayerType::Player2, GameConfig->Player2Name);
+
+	FTimerHandle StartGameTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		StartGameTimerHandle,
+		this,
+		&ATicTacGameMode::StartNewGame,
+		0.1f,  // 延迟0.1秒
+		false  // 不循环
+	);
+
+	//if (GameConfig == nullptr)
+	//{
+	//	//FString ConfigPath = FPaths::ProjectContentDir() + TEXT("");
+	//	FString ConfigPath = TEXT("/Game/Data/DA_GameConfig_Default.DA_GameConfig_Default");
+	//	GameConfig = Cast<UTicTacGameConfig>(StaticLoadObject(UTicTacGameConfig::StaticClass(), nullptr, *ConfigPath));
+	//	if (GameConfig!=nullptr && GameConfig->IsValidConfig())
+	//	{
+	//		APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	//		if (PC)
+	//		{
+	//			PC->bShowMouseCursor = true;
+	//			PC->bEnableClickEvents = true;
+	//			PC->bEnableMouseOverEvents = true;
+
+	//			FVector CameraLocation(0.0f, -500.0f, 300.0f);
+	//			FRotator CameraRotation(-20.0f, 0.0f, 0.0f);
+	//			PC->SetControlRotation(CameraRotation);
+
+	//			if (APawn* Pawn = PC->GetPawn())
+	//			{
+	//				Pawn->SetActorLocation(CameraLocation);
+	//			}
+	//		}
+	//		StartNewGame();
+	//		bIsGameActive = true;
+	//	}
+	//}
 }
 
 void ATicTacGameMode::Tick(float DeltaSeconds)
@@ -70,6 +134,58 @@ void ATicTacGameMode::StartNewGame()
 	if (TicTacGameState)
 	{
 		TicTacGameState->InitialBoard(GameConfig->BoardSize);
+		TicTacGameState->SetGameState(EGameState::Playing);
+		TicTacGameState->OnPlayerChanged.Broadcast(CurrentPlayer);
+	}
+
+	if (!Board && BoardClass)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+
+		Board = GetWorld()->SpawnActor<ATicTacBoard>(
+			BoardClass,
+			FVector(0.0f, 0.0f, 0.0f),
+			FRotator::ZeroRotator,
+			SpawnParams
+		);
+
+		if (Board)
+		{
+			ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
+			if (PC)
+			{
+				PC->SetBoard(Board);
+				ATicTacCameraPawn* CameraPawn = Cast<ATicTacCameraPawn>(PC->GetPawn());
+				if (CameraPawn)
+				{
+					float BoardSizeFloat = static_cast<float>(GameConfig->BoardSize);
+					float CalculatedHeight = 400.0f + (BoardSizeFloat - 3.0f) * 150.0f;
+
+					CameraPawn->CameraHeight = CalculatedHeight;
+					CameraPawn->ApplyCameraSettings();
+
+					FVector BoardCenter = Board->GetActorLocation();
+					CameraPawn->FocusOnLocation(BoardCenter);
+
+					UE_LOG(LogTemp, Log, TEXT("change camera size: %d×%d, height: %.1f"),
+						GameConfig->BoardSize,
+						GameConfig->BoardSize,
+						CalculatedHeight);
+				}
+			}
+		}
+	}
+	else if (Board)
+	{
+		// 如果Board已存在，重置它
+		Board->ResetAllCells();
+	}
+
+	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (PC)
+	{
+		PC->ShowGameHUD();
 	}
 }
 
@@ -79,8 +195,25 @@ void ATicTacGameMode::ReStartGame()
 	if (TicTacGameState)
 	{
 		TicTacGameState->ClearBoard();
+		TicTacGameState->SetGameState(EGameState::Playing);
+		TicTacGameState->OnPlayerChanged.Broadcast(CurrentPlayer);
 	}
+
+	if (Board)
+	{
+		Board->ResetAllCells();
+		Board->ClearHighlights();
+	}
+
 	ResetData();
+
+	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (PC)
+	{
+		PC->HideGameOver();
+		PC->ShowGameHUD();
+		PC->SetInputModeGameAndUI();
+	}
 }
 
 void ATicTacGameMode::EndGame(EPlayerType Winner, bool bIsDraw)
@@ -99,18 +232,45 @@ void ATicTacGameMode::EndGame(EPlayerType Winner, bool bIsDraw)
 			TicTacGameState->SetGameState(EGameState::GameOver);
 			TicTacGameState->AddScore(Winner);
 		}
+
+		TicTacGameState->OnGameEnded.Broadcast(Winner, bIsDraw);
+
+		if (Winner == EPlayerType::None)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("========== GameOver: Draw!=========="));
+		}
+		else
+		{
+			FString WinnerName = TicTacGameState->GetPlayerName(Winner);
+			UE_LOG(LogTemp, Warning, TEXT("========== GameOver: %s Win!=========="), *WinnerName);
+		}
+
+		ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
+		if (PC)
+		{
+			FTimerHandle ShowGameOverTimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(
+				ShowGameOverTimerHandle,
+				[PC]()
+				{
+					PC->ShowGameOver();
+				},
+				1.0f,  // 延迟1秒
+				false
+			);
+		}
 	}
 }
 
 void ATicTacGameMode::TogglePause()
 {
-	//bool bIsPaused = UGameplayStatics::IsGamePaused(this);
-	//UGameplayStatics::SetGamePaused(this, !bIsPaused);
-	//ATicTacGameState* TicTacGameState = GetTicTacGameState();
-	//if (TicTacGameState)
-	//{
-	//	TicTacGameState->SetGameState(bIsPaused ? EGameState::Playing : EGameState::Paused);
-	//}
+	bool bIsPaused = UGameplayStatics::IsGamePaused(this);
+	UGameplayStatics::SetGamePaused(this, !bIsPaused);
+	ATicTacGameState* TicTacGameState = GetTicTacGameState();
+	if (TicTacGameState)
+	{
+		TicTacGameState->SetGameState(bIsPaused ? EGameState::Playing : EGameState::Paused);
+	}
 }
 
 void ATicTacGameMode::SwitchPlayer()
@@ -118,11 +278,14 @@ void ATicTacGameMode::SwitchPlayer()
 	CurrentPlayer = (CurrentPlayer == EPlayerType::Player1)
 		? EPlayerType::Player2
 		: EPlayerType::Player1;
-
-	TurnCount++;
+	ATicTacGameState* TicTacGameState = GetTicTacGameState();
+	if (TicTacGameState)
+	{
+		TicTacGameState->OnPlayerChanged.Broadcast(CurrentPlayer);
+	}
 }
 
-bool ATicTacGameMode::ProcessPlayerMode(int32 CellIndex)
+bool ATicTacGameMode::ProcessPlayerMove(int32 CellIndex)
 {
 	if (!bIsGameActive)
 	{
@@ -143,11 +306,25 @@ bool ATicTacGameMode::ProcessPlayerMode(int32 CellIndex)
 	}
 
 	TicTacGameState->SetCellOwner(CellIndex, CurrentPlayer);
+	if (Board)
+	{
+		Board->SetCellOwner(CellIndex, CurrentPlayer);
+	}
+	TurnCount++;
 
 	FGameResult Result = CheckGameResult();
 	if (Result.bHasWinner)
 	{
+		TicTacGameState->SetWinningCells(Result.WinningCells);
+		if (Board)
+		{
+			Board->HighlightWinningCells(Result.WinningCells);
+		}
 		EndGame(Result.Winner, Result.bIsDraw);
+	}
+	else if (Result.bIsDraw)
+	{
+		EndGame(EPlayerType::None, Result.bIsDraw);
 	}
 	else
 	{
@@ -172,6 +349,8 @@ FGameResult ATicTacGameMode::CheckGameResult()
 
 	if (CheckDrawCondition())
 	{
+		Result.bHasWinner = false;
+		Result.Winner = EPlayerType::None;
 		Result.bIsDraw = true;
 		return Result;
 	}

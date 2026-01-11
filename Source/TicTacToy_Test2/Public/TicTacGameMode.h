@@ -11,6 +11,7 @@
  * 
  */
 
+class ATicTacBoard;
 class UTicTacGameConfig;
 class ATicTacGameState;
 
@@ -52,7 +53,7 @@ public:
 	void SwitchPlayer();
 
 	UFUNCTION(BlueprintCallable, Category = "Game")
-	bool ProcessPlayerMode(int32 CellIndex);
+	bool ProcessPlayerMove(int32 CellIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Game")
 	FGameResult CheckGameResult();
@@ -82,6 +83,15 @@ protected:
 	int32 RowColumnToIndex(int32 Row, int32 Column) const;
 
 protected:
+	UPROPERTY(BlueprintReadOnly, Category = "Game")
+	ATicTacBoard* Board;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game Config")
+	TSubclassOf<APawn> CameraPawnClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game Config")
+	TSubclassOf<ATicTacBoard> BoardClass;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Game State")
 	EPlayerType CurrentPlayer;
 

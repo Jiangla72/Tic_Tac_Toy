@@ -5,6 +5,8 @@
 
 ATicTacGameState::ATicTacGameState()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	BoardSize = 3;
 	Player1Name = TEXT("1");
 	Player1Score = 0;
