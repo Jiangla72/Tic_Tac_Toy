@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "TicTacGameTypes.h"
 #include "GameFramework/PlayerController.h"
 #include "TicTacPlayerController.generated.h"
 
+class UTicTacUIManager;
 class UUserWidget;
 class ATicTacGameMode;
 class ATicTacGameState;
@@ -43,6 +45,9 @@ public:
 	TSubclassOf<UUserWidget> PauseMenuWidgetClass;
 	
 public:
+	UPROPERTY()
+	UTicTacUIManager* UIManager;
+
 	UPROPERTY(BlueprintReadOnly, Category = "UI")
 	UUserWidget* MainMenuWidget = nullptr;
 
@@ -126,6 +131,21 @@ public:
 	void SetInputModeGameOnly();
 
 protected:
+	UFUNCTION()
+	void SubscribeToGameStateEvents();
+
+	UFUNCTION()
+	void OnBoardUpdated(int32 CellIndex, EPlayerType NewOwner);
+
+	UFUNCTION()
+	void OnPlayerChanged(EPlayerType NewPlayer);
+
+	UFUNCTION()
+	void OnGameEnded(EPlayerType Winner, bool bIsDraw);
+
+	UFUNCTION()
+	void OnScoreUpdated(EPlayerType CurPlayer, int32 NewScore);
+
 	void ShowWidget(UUserWidget* Widget);
 
 	void HideWidget(UUserWidget* Widget);

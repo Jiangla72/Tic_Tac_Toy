@@ -47,6 +47,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game")
 	void TogglePause();
 
+	UFUNCTION(BlueprintCallable, Category = "Game")
 	EPlayerType GetCurrentPlayer() const {return CurrentPlayer;}
 
 	UFUNCTION(BlueprintCallable, Category= "Game")

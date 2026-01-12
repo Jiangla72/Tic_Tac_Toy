@@ -1,4 +1,4 @@
-// Copyright 2025
+ï»¿// Copyright 2025
 
 
 #include "TicTacPlayerController.h"
@@ -9,6 +9,7 @@
 #include "TicTacGameMode.h"
 #include "TicTacGameState.h"
 #include "TicTacGridCell.h"
+#include "TicTacUIManager.h"
 #include "Engine/World.h"
 #include "Misc/Paths.h"
 
@@ -22,6 +23,7 @@ ATicTacPlayerController::ATicTacPlayerController()
 void ATicTacPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
 	APawn* ControlledPawn = GetPawn();
 	if (ControlledPawn)
 	{
@@ -32,8 +34,17 @@ void ATicTacPlayerController::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("cant find pawn"));
 	}
 
-	FString CurrentLevelName = GetWorld()->GetMapName(); // »ñÈ¡¹Ø¿¨Â·¾¶ GetWorld()²»Îª¿Õ²»ÓÃÅĞ¿Õ
-	CurrentLevelName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix); // ÒÆ³ıÄ¿Â¼Ö»ÁôÏÂ¹Ø¿¨Ãû
+	UIManager = NewObject<UTicTacUIManager>(this);
+	if (UIManager)
+	{
+		UIManager->Initialize(this);
+	}
+
+	// è®¢é˜…GameStateäº‹ä»¶
+	SubscribeToGameStateEvents();
+
+	FString CurrentLevelName = GetWorld()->GetMapName(); // è·å–å…³å¡è·¯å¾„ GetWorld()ä¸ä¸ºç©ºä¸ç”¨åˆ¤ç©º
+	CurrentLevelName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix); // ç§»é™¤ç›®å½•åªç•™ä¸‹å…³å¡å
 	CurrentLevelName = FPaths::GetBaseFilename(CurrentLevelName);
 
 	if (CurrentLevelName == TEXT("MainMenu"))
@@ -63,18 +74,18 @@ void ATicTacPlayerController::ShowMainMenu()
 {
 	if (!MainMenuWidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("MainMenuWidgetClass Î´ÉèÖÃ£¡"));
+		UE_LOG(LogTemp, Error, TEXT("MainMenuWidgetClass æœªè®¾ç½®ï¼"));
 		return;
 	}
 
-	// Èç¹ûWidgetÒÑ´æÔÚ£¬Ö±½ÓÏÔÊ¾
+	// å¦‚æœWidgetå·²å­˜åœ¨ï¼Œç›´æ¥æ˜¾ç¤º
 	if (MainMenuWidget)
 	{
 		ShowWidget(MainMenuWidget);
 	}
 	else
 	{
-		// ´´½¨ĞÂWidget
+		// åˆ›å»ºæ–°Widget
 		MainMenuWidget = CreateWidget<UUserWidget>(this, MainMenuWidgetClass);
 		if (MainMenuWidget)
 		{
@@ -110,7 +121,7 @@ void ATicTacPlayerController::ShowGameSettings()
 		if (GameSettingsWidget)
 		{
 			ShowWidget(GameSettingsWidget);
-			UE_LOG(LogTemp, Log, TEXT("ÓÎÏ·ÉèÖÃÒÑÏÔÊ¾"));
+			UE_LOG(LogTemp, Log, TEXT("æ¸¸æˆè®¾ç½®å·²æ˜¾ç¤º"));
 		}
 	}
 
@@ -213,7 +224,7 @@ void ATicTacPlayerController::ShowPauseMenu()
 		}
 	}
 
-	// ÔİÍ£ÓÎÏ·
+	// æš‚åœæ¸¸æˆ
 	UGameplayStatics::SetGamePaused(GetWorld(), true);
 	SetInputModeUIOnly();
 	bClickInputEnabled = false;
@@ -226,7 +237,7 @@ void ATicTacPlayerController::HidePauseMenu()
 		HideWidget(PauseMenuWidget);
 	}
 
-	// »Ö¸´ÓÎÏ·
+	// æ¢å¤æ¸¸æˆ
 	UGameplayStatics::SetGamePaused(GetWorld(), false);
 	SetInputModeGameAndUI();
 	bClickInputEnabled = true;
@@ -267,7 +278,7 @@ void ATicTacPlayerController::OnMouseLeftClick()
 	if (GetHitResultUnderCursor(ECC_Visibility, false, HitResult))
 	{
 		UE_LOG(LogTemp, Log, TEXT("GetHitResultUnderCursor"));
-		// ÉäÏß¼ì²âÄÜ¿´µ½µÄÎïÌå
+		// å°„çº¿æ£€æµ‹èƒ½çœ‹åˆ°çš„ç‰©ä½“
 		AActor* HitActor = HitResult.GetActor();
 		if (HitActor && HitActor->ActorHasTag(TEXT("GridCell")))
 		{
@@ -275,6 +286,8 @@ void ATicTacPlayerController::OnMouseLeftClick()
 			if (GridCell)
 			{
 				int32 CellIndex = GridCell->GetGridIndex();
+				UE_LOG(LogTemp, Log, TEXT("HandleCellClick %d"), CellIndex);
+
 				HandleCellClick(CellIndex);
 			}
 		}
@@ -301,14 +314,17 @@ void ATicTacPlayerController::HandleCellClick(int32 CellIndex)
 		return;
 	}
 
-	// µ÷ÓÃGameMode´¦ÀíÂä×Ó
+	// è°ƒç”¨GameModeå¤„ç†è½å­
 	bool bSuccess = GameMode->ProcessPlayerMove(CellIndex);
 
 	if (bSuccess)
 	{
+		UE_LOG(LogTemp, Log, TEXT("ProcessPlayerMove success"));
 	}
 	else
 	{
+		UE_LOG(LogTemp, Log, TEXT("ProcessPlayerMove faild"));
+
 	}
 }
 
@@ -344,6 +360,72 @@ void ATicTacPlayerController::SetInputModeGameOnly()
 	FInputModeGameOnly InputMode;
 	SetInputMode(InputMode);
 	bShowMouseCursor = false;
+}
+
+void ATicTacPlayerController::SubscribeToGameStateEvents()
+{
+	ATicTacGameState* TicTacGameState = GetTicTacGameState();
+	if (!TicTacGameState)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SubscribeToGameStateEvents failed"));
+
+		// å»¶è¿Ÿé‡è¯•
+		FTimerHandle RetryTimer;
+		GetWorld()->GetTimerManager().SetTimer(
+			RetryTimer,
+			this,
+			&ATicTacPlayerController::SubscribeToGameStateEvents,
+			0.5f,
+			false
+		);
+		return;
+	}
+
+	// è®¢é˜…æ‰€æœ‰äº‹ä»¶
+	TicTacGameState->OnBoardUpdated.AddDynamic(this, &ATicTacPlayerController::OnBoardUpdated);
+	TicTacGameState->OnPlayerChanged.AddDynamic(this, &ATicTacPlayerController::OnPlayerChanged);
+	TicTacGameState->OnGameEnded.AddDynamic(this, &ATicTacPlayerController::OnGameEnded);
+	TicTacGameState->OnScoreUpdated.AddDynamic(this, &ATicTacPlayerController::OnScoreUpdated);
+
+	UE_LOG(LogTemp, Log, TEXT("SubscribeToGameStateEvents"));
+}
+
+void ATicTacPlayerController::OnBoardUpdated(int32 CellIndex, EPlayerType NewOwner)
+{
+	UE_LOG(LogTemp, Verbose, TEXT("OnBoardUpdated: cell %d updateï¼ŒOwner: %d"), CellIndex, (int32)NewOwner);
+	//if (UIManager)
+	//{
+	//	UIManager->UpdateGridCell(CellIndex, NewOwner);
+	//}
+}
+
+void ATicTacPlayerController::OnPlayerChanged(EPlayerType NewPlayer)
+{
+	UE_LOG(LogTemp, Log, TEXT("UI: OnPlayerChanged %d"), (int32)NewPlayer);
+	if (UIManager)
+	{
+		UIManager->UpdateCurrentPlayerIndicator(NewPlayer);
+	}
+}
+
+void ATicTacPlayerController::OnGameEnded(EPlayerType Winner, bool bIsDraw)
+{
+	UE_LOG(LogTemp, Warning, TEXT("UI: OnGameEndedï¼ŒWinner: %d"), (int32)Winner);
+
+	if (UIManager)
+	{
+		UIManager->ShowGameResult(Winner, bIsDraw);
+	}
+}
+
+void ATicTacPlayerController::OnScoreUpdated(EPlayerType CurPlayer, int32 NewScore)
+{
+	UE_LOG(LogTemp, Log, TEXT("UI: Player %d NewScore %d"), (int32)CurPlayer, NewScore);
+
+	if (UIManager)
+	{
+		UIManager->UpdateScoreDisplay(CurPlayer, NewScore);
+	}
 }
 
 void ATicTacPlayerController::ShowWidget(UUserWidget* Widget)

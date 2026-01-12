@@ -109,6 +109,7 @@ void ATicTacGridCell::SetOwningPlayer(EPlayerType NewOwner)
 	UpdatePieceDisplay();
 	if (bIsOccupied)
 	{
+		UE_LOG(LogTemp, Log, TEXT("SetOwningPlayer"));
 		PlayPlacementAnimation();
 		if (PlacePieceSound)
 		{
@@ -151,7 +152,7 @@ void ATicTacGridCell::ShowHoverEffect()
 	{
 		return;
 	}
-	UE_LOG(LogTemp, Log, TEXT("ShowHoverEffect"));
+	//UE_LOG(LogTemp, Log, TEXT("ShowHoverEffect"));
 
 	if (HoverMaterial)
 	{
@@ -165,7 +166,6 @@ void ATicTacGridCell::HideHoverEffect()
 	{
 		return;
 	}
-	UE_LOG(LogTemp, Log, TEXT("HideHoverEffect"));
 
 	UpdateCellMaterial();
 }
@@ -244,6 +244,7 @@ void ATicTacGridCell::UpdateCellMaterial()
 	{
 		return;
 	}
+	UE_LOG(LogTemp, Log, TEXT("UpdateCellMaterial"));
 
 	// 根据状态选择材质
 	UMaterialInterface* MaterialToUse = DefaultMaterial;
@@ -276,15 +277,18 @@ void ATicTacGridCell::UpdatePieceDisplay()
 	if (bIsOccupied && Player != EPlayerType::None)
 	{
 		PieceMesh->SetVisibility(true);
-
+		PieceMesh->SetHiddenInGame(false);
 		UMaterialInterface* PieceMaterial = nullptr;
 		if (Player == EPlayerType::Player1 && Player1Material)
 		{
 			PieceMaterial = Player1Material;
+			UE_LOG(LogTemp, Log, TEXT("Player1Material"));
+
 		}
 		else if (Player == EPlayerType::Player2 && Player2Material)
 		{
 			PieceMaterial = Player2Material;
+			UE_LOG(LogTemp, Log, TEXT("Player2Material"));
 		}
 
 		if (PieceMaterial)

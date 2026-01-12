@@ -129,6 +129,7 @@ void ATicTacGameMode::StartNewGame()
 		return;
 	}
 
+	UE_LOG(LogTemp, Log, TEXT("StartNewGame"));
 	ResetData();
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
 	if (TicTacGameState)
@@ -186,6 +187,7 @@ void ATicTacGameMode::StartNewGame()
 	if (PC)
 	{
 		PC->ShowGameHUD();
+		bIsGameActive = true;
 	}
 }
 
@@ -213,6 +215,8 @@ void ATicTacGameMode::ReStartGame()
 		PC->HideGameOver();
 		PC->ShowGameHUD();
 		PC->SetInputModeGameAndUI();
+		bIsGameActive = true;
+
 	}
 }
 
@@ -269,7 +273,16 @@ void ATicTacGameMode::TogglePause()
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
 	if (TicTacGameState)
 	{
-		TicTacGameState->SetGameState(bIsPaused ? EGameState::Playing : EGameState::Paused);
+		if (bIsPaused)
+		{
+			TicTacGameState->SetGameState(EGameState::Playing);
+			bIsGameActive = true;
+		}
+		else
+		{
+			TicTacGameState->SetGameState(EGameState::Paused); 
+			bIsGameActive = false;
+		}
 	}
 }
 

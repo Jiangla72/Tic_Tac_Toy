@@ -64,28 +64,39 @@ public:
     void ClearBoard();
 
     bool SetCellOwner(int32 nIndex, EPlayerType Owner);
-	EPlayerType GetCellOwner(int32 nIndex) const;
+    UFUNCTION(BlueprintPure, Category = "Board")
+    EPlayerType GetCellOwner(int32 nIndex) const;
 
+    UFUNCTION(BlueprintPure, Category = "Board")
     bool IsCellOccupied(int32 nIndex) const;
     TArray<int32> GetOccupiedCells() const;
     int32 GetOccupiedCellCount() const;
 
+    UFUNCTION(BlueprintPure, Category = "Board")
     bool IsWinningCell(int32 CellIndex) const;
     void SetWinningCells(const TArray<int32>& Cells);
 	TArray<int32> GetWinningCells() const;
 
 	TArray<int32> GetEmptyCells() const;
 
+    UFUNCTION(BlueprintCallable, Category = "Players")
     void SetPlayerName(EPlayerType Player, const FString& Name);
+    UFUNCTION(BlueprintPure, Category = "Players")
     FString GetPlayerName(EPlayerType Player) const;
 
+    UFUNCTION(BlueprintCallable, Category = "Players")
     void AddScore(EPlayerType Player, int32 Amount = 1);
+    UFUNCTION(BlueprintPure, Category = "Players")
     int32 GetScore(EPlayerType Player) const;
-	void ResetScores();
+    UFUNCTION(BlueprintCallable, Category = "Players")
+    void ResetScores();
 
-	void SetGameState(EGameState NewState);
+    UFUNCTION(BlueprintCallable, Category = "Game State")
+    void SetGameState(EGameState NewState);
+    UFUNCTION(BlueprintPure, Category = "Game State")
     EGameState GetGameState() const { return CurrentGameState; }
 
+    UFUNCTION(BlueprintCallable, Category = "Game State")
     EPlayerType GetCurrentPlayerTurn() const;
 	bool IsBoardFull() const;
     void SwitchPlayerTurn();
