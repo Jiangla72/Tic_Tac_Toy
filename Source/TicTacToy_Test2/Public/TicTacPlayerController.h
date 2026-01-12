@@ -46,7 +46,7 @@ public:
 	
 public:
 	UPROPERTY()
-	UTicTacUIManager* UIManager;
+	UTicTacUIManager* UIManager = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, Category = "UI")
 	UUserWidget* MainMenuWidget = nullptr;

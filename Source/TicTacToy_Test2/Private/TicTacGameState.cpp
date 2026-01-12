@@ -254,6 +254,7 @@ void ATicTacGameState::SwitchPlayerTurn()
 	{
 		playerTurn = EPlayerType::Player1;
 	}
+	OnPlayerChanged.Broadcast(playerTurn);
 }
 
 void ATicTacGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

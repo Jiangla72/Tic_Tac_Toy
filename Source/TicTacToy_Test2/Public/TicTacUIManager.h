@@ -19,6 +19,9 @@ class TICTACTOY_TEST2_API UTicTacUIManager : public UObject
 	GENERATED_BODY()
 	
 public:
+	//UFUNCTION(BlueprintCallable, Category = "UI")
+	//static UTicTacUIManager* GetInstance(UWorld* World);
+
 	void Initialize(ATicTacPlayerController* InPlayerController);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
@@ -31,6 +34,9 @@ public:
 	void UpdateScoreDisplay(EPlayerType Player, int32 NewScore);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
+	void UpdatePlayerName(EPlayerType Player, FString Name);
+
+	UFUNCTION(BlueprintCallable, Category = "UI")
 	void ShowGameResult(EPlayerType Winner, bool bIsDraw);
 
 protected:
@@ -39,4 +45,6 @@ protected:
 
 	UPROPERTY()
 	ATicTacGameState* GameState;
+
+	//static UTicTacUIManager* Instance;
 };

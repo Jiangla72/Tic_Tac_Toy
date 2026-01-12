@@ -166,6 +166,7 @@ void ATicTacGridCell::HideHoverEffect()
 	{
 		return;
 	}
+	//UE_LOG(LogTemp, Log, TEXT("HideHoverEffect"));
 
 	UpdateCellMaterial();
 }
@@ -204,7 +205,7 @@ void ATicTacGridCell::PlayWinAnimation()
 
 void ATicTacGridCell::OnMouseBeginHover(UPrimitiveComponent* TouchedComponent)
 {
-	UE_LOG(LogTemp, Log, TEXT("OnMouseBeginHover"));
+	//UE_LOG(LogTemp, Log, TEXT("OnMouseBeginHover"));
 
 	if (Player == EPlayerType::None)
 	{
@@ -218,6 +219,8 @@ void ATicTacGridCell::OnMouseBeginHover(UPrimitiveComponent* TouchedComponent)
 
 void ATicTacGridCell::OnMouseEndHover(UPrimitiveComponent* TouchedComponent)
 {
+	//UE_LOG(LogTemp, Log, TEXT("OnMouseEndHover"));
+
 	HideHoverEffect();
 }
 

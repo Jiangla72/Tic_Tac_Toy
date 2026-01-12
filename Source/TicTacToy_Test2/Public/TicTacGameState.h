@@ -71,6 +71,8 @@ public:
     bool IsCellOccupied(int32 nIndex) const;
     TArray<int32> GetOccupiedCells() const;
     int32 GetOccupiedCellCount() const;
+    UFUNCTION(BlueprintPure, Category = "Board")
+    bool IsBoardFull() const;
 
     UFUNCTION(BlueprintPure, Category = "Board")
     bool IsWinningCell(int32 CellIndex) const;
@@ -96,9 +98,10 @@ public:
     UFUNCTION(BlueprintPure, Category = "Game State")
     EGameState GetGameState() const { return CurrentGameState; }
 
-    UFUNCTION(BlueprintCallable, Category = "Game State")
+    UFUNCTION(BlueprintPure, Category = "Game State")
     EPlayerType GetCurrentPlayerTurn() const;
-	bool IsBoardFull() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Game State")
     void SwitchPlayerTurn();
 protected:
     // 网络复制支持（未来扩展多人模式）

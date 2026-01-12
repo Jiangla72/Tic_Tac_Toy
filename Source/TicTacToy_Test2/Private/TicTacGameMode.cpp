@@ -63,42 +63,15 @@ void ATicTacGameMode::BeginPlay()
 	TicTacGameState->SetPlayerName(EPlayerType::Player1, GameConfig->Player1Name);
 	TicTacGameState->SetPlayerName(EPlayerType::Player2, GameConfig->Player2Name);
 
-	FTimerHandle StartGameTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(
-		StartGameTimerHandle,
-		this,
-		&ATicTacGameMode::StartNewGame,
-		0.1f,  // 延迟0.1秒
-		false  // 不循环
-	);
+	//FTimerHandle StartGameTimerHandle;
+	//GetWorld()->GetTimerManager().SetTimer(
+	//	StartGameTimerHandle,
+	//	this,
+	//	&ATicTacGameMode::StartNewGame,
+	//	0.1f,  // 延迟0.1秒
+	//	false  // 不循环
+	//);
 
-	//if (GameConfig == nullptr)
-	//{
-	//	//FString ConfigPath = FPaths::ProjectContentDir() + TEXT("");
-	//	FString ConfigPath = TEXT("/Game/Data/DA_GameConfig_Default.DA_GameConfig_Default");
-	//	GameConfig = Cast<UTicTacGameConfig>(StaticLoadObject(UTicTacGameConfig::StaticClass(), nullptr, *ConfigPath));
-	//	if (GameConfig!=nullptr && GameConfig->IsValidConfig())
-	//	{
-	//		APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	//		if (PC)
-	//		{
-	//			PC->bShowMouseCursor = true;
-	//			PC->bEnableClickEvents = true;
-	//			PC->bEnableMouseOverEvents = true;
-
-	//			FVector CameraLocation(0.0f, -500.0f, 300.0f);
-	//			FRotator CameraRotation(-20.0f, 0.0f, 0.0f);
-	//			PC->SetControlRotation(CameraRotation);
-
-	//			if (APawn* Pawn = PC->GetPawn())
-	//			{
-	//				Pawn->SetActorLocation(CameraLocation);
-	//			}
-	//		}
-	//		StartNewGame();
-	//		bIsGameActive = true;
-	//	}
-	//}
 }
 
 void ATicTacGameMode::Tick(float DeltaSeconds)
@@ -186,6 +159,7 @@ void ATicTacGameMode::StartNewGame()
 	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PC)
 	{
+		PC->HideAllUI();
 		PC->ShowGameHUD();
 		bIsGameActive = true;
 	}
@@ -268,9 +242,13 @@ void ATicTacGameMode::EndGame(EPlayerType Winner, bool bIsDraw)
 
 void ATicTacGameMode::TogglePause()
 {
+	UE_LOG(LogTemp, Warning, TEXT("==========TogglePause=========="));
+
 	bool bIsPaused = UGameplayStatics::IsGamePaused(this);
 	UGameplayStatics::SetGamePaused(this, !bIsPaused);
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
+	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
+	PC->TogglePause();
 	if (TicTacGameState)
 	{
 		if (bIsPaused)
@@ -292,10 +270,7 @@ void ATicTacGameMode::SwitchPlayer()
 		? EPlayerType::Player2
 		: EPlayerType::Player1;
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
-	if (TicTacGameState)
-	{
-		TicTacGameState->OnPlayerChanged.Broadcast(CurrentPlayer);
-	}
+	TicTacGameState->SwitchPlayerTurn();
 }
 
 bool ATicTacGameMode::ProcessPlayerMove(int32 CellIndex)
@@ -341,6 +316,7 @@ bool ATicTacGameMode::ProcessPlayerMove(int32 CellIndex)
 	}
 	else
 	{
+		TicTacGameState->AddScore(CurrentPlayer);
 		SwitchPlayer();
 	}
 	return true;

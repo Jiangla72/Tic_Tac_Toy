@@ -24,17 +24,8 @@ void ATicTacPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	APawn* ControlledPawn = GetPawn();
-	if (ControlledPawn)
-	{
-		SetViewTarget(ControlledPawn);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("cant find pawn"));
-	}
-
 	UIManager = NewObject<UTicTacUIManager>(this);
+	//UIManager = UTicTacUIManager::GetInstance(GetWorld());
 	if (UIManager)
 	{
 		UIManager->Initialize(this);
@@ -47,16 +38,26 @@ void ATicTacPlayerController::BeginPlay()
 	CurrentLevelName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix); // 移除目录只留下关卡名
 	CurrentLevelName = FPaths::GetBaseFilename(CurrentLevelName);
 
-	if (CurrentLevelName == TEXT("MainMenu"))
-	{
+	//if (CurrentLevelName == TEXT("MainMenu"))
+	//{
 		ShowMainMenu();
 		SetInputModeUIOnly();
-	}
-	else if (CurrentLevelName == TEXT("GameLevel"))
-	{
-		ShowGameHUD();
-		SetInputModeGameAndUI();
-	}
+	//}
+	//else if (CurrentLevelName == TEXT("StartMap"))
+	//{
+	//	APawn* ControlledPawn = GetPawn();
+	//	if (ControlledPawn)
+	//	{
+	//		SetViewTarget(ControlledPawn);
+	//	}
+	//	else
+	//	{
+	//		UE_LOG(LogTemp, Warning, TEXT("cant find pawn"));
+	//	}
+
+	//	ShowGameHUD();
+	//	SetInputModeGameAndUI();
+	//}
 }
 
 void ATicTacPlayerController::SetupInputComponent()
@@ -74,9 +75,10 @@ void ATicTacPlayerController::ShowMainMenu()
 {
 	if (!MainMenuWidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("MainMenuWidgetClass 未设置！"));
+		UE_LOG(LogTemp, Error, TEXT("MainMenuWidgetClass error"));
 		return;
 	}
+	UE_LOG(LogTemp, Error, TEXT("show main menu"));
 
 	// 如果Widget已存在，直接显示
 	if (MainMenuWidget)
@@ -98,6 +100,8 @@ void ATicTacPlayerController::ShowMainMenu()
 
 void ATicTacPlayerController::HideMainMenu()
 {
+	UE_LOG(LogTemp, Error, TEXT("hide main menu"));
+
 	if (MainMenuWidgetClass)
 	{
 		HideWidget(MainMenuWidget);
@@ -106,6 +110,7 @@ void ATicTacPlayerController::HideMainMenu()
 
 void ATicTacPlayerController::ShowGameSettings()
 {
+	UE_LOG(LogTemp, Log, TEXT("ShowGameSettings"));
 	if (!GameSettingsWidgetClass)
 	{
 		return;
@@ -158,7 +163,12 @@ void ATicTacPlayerController::ShowGameHUD()
 			ShowWidget(GameHUDWidget);
 		}
 	}
+	if (UIManager)
+	{
+		UE_LOG(LogTemp,Log, TEXT("UIManager"));
 
+		UIManager->UpdateGameHUD();
+	}
 	SetInputModeGameAndUI();
 	bClickInputEnabled = true;
 }
@@ -237,7 +247,6 @@ void ATicTacPlayerController::HidePauseMenu()
 		HideWidget(PauseMenuWidget);
 	}
 
-	// 恢复游戏
 	UGameplayStatics::SetGamePaused(GetWorld(), false);
 	SetInputModeGameAndUI();
 	bClickInputEnabled = true;
@@ -245,7 +254,7 @@ void ATicTacPlayerController::HidePauseMenu()
 
 void ATicTacPlayerController::TogglePause()
 {
-	bool bIsGamePaused = UGameplayStatics::IsGamePaused(GetWorld());
+	//bool bIsGamePaused = UGameplayStatics::IsGamePaused(GetWorld());
 	if (PauseMenuWidget && PauseMenuWidget->IsInViewport())
 	{
 		HidePauseMenu();
@@ -319,6 +328,7 @@ void ATicTacPlayerController::HandleCellClick(int32 CellIndex)
 
 	if (bSuccess)
 	{
+		UIManager->UpdateGameHUD();
 		UE_LOG(LogTemp, Log, TEXT("ProcessPlayerMove success"));
 	}
 	else
