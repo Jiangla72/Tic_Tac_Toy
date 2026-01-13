@@ -118,6 +118,12 @@ void ATicTacBoard::ClearBoard()
 	GridCells.Empty();
 }
 
+void ATicTacBoard::ReLoadBoard()
+{
+	LoadConfigFromGameMode();
+	GenerateBoard(BoardSize);
+}
+
 void ATicTacBoard::ResetAllCells()
 {
 	for (ATicTacGridCell* Cell : GridCells)

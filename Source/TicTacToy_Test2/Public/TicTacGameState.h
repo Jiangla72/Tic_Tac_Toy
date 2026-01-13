@@ -103,6 +103,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Game State")
     void SwitchPlayerTurn();
+
+    UFUNCTION(BlueprintCallable, Category = "Game State")
+    void SetCurPlayer(EPlayerType Player);
 protected:
     // 网络复制支持（未来扩展多人模式）
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

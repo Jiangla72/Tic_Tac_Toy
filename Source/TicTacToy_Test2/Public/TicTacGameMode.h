@@ -42,6 +42,9 @@ public:
 	void ReStartGame();
 
 	UFUNCTION(BlueprintCallable, Category = "Game")
+	void StartNextGame();
+
+	UFUNCTION(BlueprintCallable, Category = "Game")
 	void EndGame(EPlayerType Winner, bool bIsDraw);
 
 	UFUNCTION(BlueprintCallable, Category = "Game")

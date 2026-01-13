@@ -16,7 +16,7 @@ ATicTacGameMode::ATicTacGameMode()
 	PlayerControllerClass = ATicTacPlayerController::StaticClass();
 	PrimaryActorTick.bCanEverTick = true;
 
-	CurrentPlayer = EPlayerType::Player1;
+	CurrentPlayer = EPlayerType::None;
     TurnCount = 0;
     bIsGameActive = false;
     GameConfig = nullptr;
@@ -24,7 +24,7 @@ ATicTacGameMode::ATicTacGameMode()
 
 void ATicTacGameMode::ResetData()
 {
-	CurrentPlayer = EPlayerType::Player1;
+	CurrentPlayer = EPlayerType::None;
 	TurnCount = 0;
 	bIsGameActive = false;
 }
@@ -88,9 +88,13 @@ void ATicTacGameMode::LoadGameConfig(UTicTacGameConfig* NewConfig)
 	if (NewConfig && NewConfig->IsValidConfig())
 	{
 		GameConfig = NewConfig;
+		if (Board)
+		{
+			Board->ReLoadBoard();
+		}
+
 		if (bIsGameActive)
 		{
-			ReStartGame();
 		}
 	}
 }
@@ -109,9 +113,8 @@ void ATicTacGameMode::StartNewGame()
 	{
 		TicTacGameState->InitialBoard(GameConfig->BoardSize);
 		TicTacGameState->SetGameState(EGameState::Playing);
-		TicTacGameState->OnPlayerChanged.Broadcast(CurrentPlayer);
 	}
-
+	SwitchPlayer();
 	if (!Board && BoardClass)
 	{
 		FActorSpawnParameters SpawnParams;
@@ -167,22 +170,22 @@ void ATicTacGameMode::StartNewGame()
 
 void ATicTacGameMode::ReStartGame()
 {
+	ResetData();
+	UE_LOG(LogTemp, Warning, TEXT("========== ReStartGame=========="));
+
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
 	if (TicTacGameState)
 	{
 		TicTacGameState->ClearBoard();
 		TicTacGameState->SetGameState(EGameState::Playing);
-		TicTacGameState->OnPlayerChanged.Broadcast(CurrentPlayer);
 	}
+	SwitchPlayer();
 
 	if (Board)
 	{
 		Board->ResetAllCells();
 		Board->ClearHighlights();
 	}
-
-	ResetData();
-
 	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PC)
 	{
@@ -190,8 +193,11 @@ void ATicTacGameMode::ReStartGame()
 		PC->ShowGameHUD();
 		PC->SetInputModeGameAndUI();
 		bIsGameActive = true;
-
 	}
+}
+
+void ATicTacGameMode::StartNextGame()
+{
 }
 
 void ATicTacGameMode::EndGame(EPlayerType Winner, bool bIsDraw)
@@ -212,31 +218,6 @@ void ATicTacGameMode::EndGame(EPlayerType Winner, bool bIsDraw)
 		}
 
 		TicTacGameState->OnGameEnded.Broadcast(Winner, bIsDraw);
-
-		if (Winner == EPlayerType::None)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("========== GameOver: Draw!=========="));
-		}
-		else
-		{
-			FString WinnerName = TicTacGameState->GetPlayerName(Winner);
-			UE_LOG(LogTemp, Warning, TEXT("========== GameOver: %s Win!=========="), *WinnerName);
-		}
-
-		ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
-		if (PC)
-		{
-			FTimerHandle ShowGameOverTimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(
-				ShowGameOverTimerHandle,
-				[PC]()
-				{
-					PC->ShowGameOver();
-				},
-				1.0f,  // 延迟1秒
-				false
-			);
-		}
 	}
 }
 
@@ -275,6 +256,8 @@ void ATicTacGameMode::SwitchPlayer()
 
 bool ATicTacGameMode::ProcessPlayerMove(int32 CellIndex)
 {
+	UE_LOG(LogTemp, Warning, TEXT("==========ProcessPlayerMove=========="));
+
 	if (!bIsGameActive)
 	{
 		return false;
@@ -324,6 +307,8 @@ bool ATicTacGameMode::ProcessPlayerMove(int32 CellIndex)
 
 FGameResult ATicTacGameMode::CheckGameResult()
 {
+	UE_LOG(LogTemp, Warning, TEXT("==========CheckGameResult=========="));
+
 	FGameResult Result;
 	TArray<int32> WinningCells;
 

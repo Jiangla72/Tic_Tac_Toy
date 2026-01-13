@@ -58,6 +58,9 @@ public:
 	void ClearBoard();
 
 	UFUNCTION(BlueprintCallable, Category = "Board")
+	void ReLoadBoard();
+
+	UFUNCTION(BlueprintCallable, Category = "Board")
 	void ResetAllCells();
 
 	UFUNCTION(BlueprintPure, Category = "Board")

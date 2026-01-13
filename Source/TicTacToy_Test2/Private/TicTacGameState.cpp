@@ -13,6 +13,7 @@ ATicTacGameState::ATicTacGameState()
 	Player2Name = TEXT("2");
 	Player2Score = 0;
 	CurrentGameState = EGameState::NotStarted;
+	CurrentPlayerTurn = EPlayerType::None;
 
 	int32 CellNum = BoardSize * BoardSize;
 
@@ -49,12 +50,15 @@ void ATicTacGameState::InitialBoard(int32 nSize)
 void ATicTacGameState::ClearBoard()
 {
 	BoardData.Empty();
-	for (int32 i = 0; i < BoardData.Num(); ++i)
+	int32 nTotalSize = BoardSize * BoardSize;
+	BoardData.SetNum(nTotalSize);
+	for (int32 i = 0; i < nTotalSize; ++i)
 	{
 		BoardData[i] = EPlayerType::None;
 	}
 	WinningCells.Empty();
 	CurrentGameState = EGameState::Playing;
+	UE_LOG(LogTemp, Error, TEXT("Error: ClearBoard %d"), BoardData.Num());
 
 }
 
@@ -62,16 +66,22 @@ bool ATicTacGameState::SetCellOwner(int32 nIndex, EPlayerType CellOwner)
 {
 	if (nIndex < 0 || nIndex >= BoardData.Num())
 	{
+		UE_LOG(LogTemp, Error, TEXT("Error: SetCellOwner%d %d"), nIndex, BoardData.Num());
+
 		return false;
 	}
 
 	if (BoardData[nIndex] != EPlayerType::None)
 	{
+		UE_LOG(LogTemp, Error, TEXT("Error: SetCellOwner BoardData%d"), nIndex);
+
 		return false;
 	}
 
 	if (CellOwner == EPlayerType::None)
 	{
+		UE_LOG(LogTemp, Error, TEXT("Error: SetCellOwner CellOwner%d"), nIndex);
+
 		return false;
 	}
 	BoardData[nIndex] = CellOwner;
@@ -86,7 +96,7 @@ EPlayerType ATicTacGameState::GetCellOwner(int32 nIndex) const
 	EPlayerType CellOwner = EPlayerType::None;
 	if (nIndex < 0 || nIndex >= BoardData.Num())
 	{
-		UE_LOG(LogTemp,Error, TEXT(""), nIndex);
+		//UE_LOG(LogTemp,Error, TEXT("%d"), nIndex);
 	}
 	else
 	{
@@ -100,7 +110,7 @@ bool ATicTacGameState::IsCellOccupied(int32 nIndex) const
 	bool bOcp = false;
 	if (nIndex < 0 || nIndex >= BoardData.Num())
 	{
-		UE_LOG(LogTemp, Error, TEXT(""), nIndex);
+		UE_LOG(LogTemp, Error, TEXT("Error: IsCellOccupied %d %d"), nIndex, BoardData.Num());
 		return false;
 	}
 
@@ -246,14 +256,13 @@ bool ATicTacGameState::IsBoardFull() const
 
 void ATicTacGameState::SwitchPlayerTurn()
 {
-	if (playerTurn == EPlayerType::Player1)
-	{
-		playerTurn = EPlayerType::Player2;
-	}
-	else if (playerTurn == EPlayerType::Player2)
-	{
-		playerTurn = EPlayerType::Player1;
-	}
+	playerTurn = (playerTurn == EPlayerType::Player1) ? EPlayerType::Player2 : EPlayerType::Player1;
+	SetCurPlayer(playerTurn);
+}
+
+void ATicTacGameState::SetCurPlayer(EPlayerType Player)
+{
+	playerTurn = Player;
 	OnPlayerChanged.Broadcast(playerTurn);
 }
 
