@@ -15,7 +15,7 @@ class ATicTacBoard;
 
 
 /**
- * 管理玩家输入和UI界面
+ * Player Controller for TicTacToe game
  */
 UCLASS()
 class TICTACTOY_TEST2_API ATicTacPlayerController : public APlayerController

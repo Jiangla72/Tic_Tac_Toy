@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "TicTacGameTypes.h"
 #include "Engine/DataAsset.h"
 #include "TicTacGameConfig.generated.h"
 
@@ -18,10 +19,10 @@ public:
 
 	UTicTacGameConfig();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Board Settings", meta = (ClampMin = "3", ClampMax = "10"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Board Settings", meta = (ClampMin = "3", ClampMax = "10"))
 	int32 BoardSize;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Board Settings", meta = (ClampMin = "3", ClampMax = "10"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Board Settings", meta = (ClampMin = "3", ClampMax = "10"))
 	int32 WinConditionCount;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Board Settings", meta = (ClampMin = "50", ClampMax = "200"))
@@ -30,17 +31,26 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Board Settings", meta = (ClampMin = "30", ClampMax = "150"))
 	float GridSize;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings")
 	FString Player1Name;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings")
 	FString Player2Name;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings")
 	FLinearColor Player1Color;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings")
 	FLinearColor Player2Color;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	bool bEnableAI;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	EPlayerType AIPlayerType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	EAIDifficulty Difficulty;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Game Rules")
 	bool bAllowDiagonalWins;

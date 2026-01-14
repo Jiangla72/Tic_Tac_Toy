@@ -1,26 +1,14 @@
 // Copyright 2025
 
-
 #include "TicTacUIManager.h"
 #include "TicTacGameState.h"
 #include "TicTacPlayerController.h"
 #include "TicTacHUDWidget.h"
 #include "TicTacGameOverWidget.h"
-//UTicTacUIManager* UTicTacUIManager::Instance = nullptr;
-//
-//UTicTacUIManager* UTicTacUIManager::GetInstance(UWorld* World)
-//{
-//	if (!Instance && World)
-//	{
-//		Instance = Cast<UTicTacUIManager>(World->GetGameInstance());
-//	}
-//	return Instance;
-//}
 
 void UTicTacUIManager::Initialize(ATicTacPlayerController* InPlayerController)
 {
 	PlayerController = InPlayerController;
-
 	if (PlayerController)
 	{
 		GameState = PlayerController->GetTicTacGameState();
@@ -30,94 +18,65 @@ void UTicTacUIManager::Initialize(ATicTacPlayerController* InPlayerController)
 
 void UTicTacUIManager::UpdateGameHUD()
 {
-	if (!GameState)
+	if (!GameState || !PlayerController)
 		return;
 
-	UpdateScoreDisplay(EPlayerType::Player1, GameState->GetScore(EPlayerType::Player1));
 	UpdatePlayerName(EPlayerType::Player1, GameState->GetPlayerName(EPlayerType::Player1));
-	UpdateScoreDisplay(EPlayerType::Player2, GameState->GetScore(EPlayerType::Player2));
 	UpdatePlayerName(EPlayerType::Player2, GameState->GetPlayerName(EPlayerType::Player2));
-
-
-	UE_LOG(LogTemp, Verbose, TEXT("UpdateGameHUD"));
+	UpdateScoreDisplay(EPlayerType::Player1, GameState->GetScore(EPlayerType::Player1));
+	UpdateScoreDisplay(EPlayerType::Player2, GameState->GetScore(EPlayerType::Player2));
 }
 
 void UTicTacUIManager::UpdateCurrentPlayerIndicator(EPlayerType CurrentPlayer)
 {
-	if (!GameState)
-		return;
 	if (!PlayerController || !PlayerController->GameHUDWidget)
-	{
 		return;
-	}
-	FString PlayerName = GameState->GetPlayerName(CurrentPlayer);
-	UTicTacHUDWidget* widget = Cast<UTicTacHUDWidget>(PlayerController->GameHUDWidget);
-	if (widget)
+
+	UTicTacHUDWidget* Widget = Cast<UTicTacHUDWidget>(PlayerController->GameHUDWidget);
+	if (Widget && GameState)
 	{
-		widget->UpdateTurnText(GameState->GetPlayerName(CurrentPlayer), CurrentPlayer == EPlayerType::Player1 ? true : false);
+		Widget->UpdateTurnText(GameState->GetPlayerName(CurrentPlayer), CurrentPlayer == EPlayerType::Player1);
 	}
-	UE_LOG(LogTemp, Log, TEXT("CurrentPlayer: %s"), *PlayerName);
 }
 
 void UTicTacUIManager::UpdateScoreDisplay(EPlayerType Player, int32 NewScore)
 {
-	if (!GameState)
-		return;
 	if (!PlayerController || !PlayerController->GameHUDWidget)
-	{
 		return;
-	}
-	FString PlayerName = GameState->GetPlayerName(Player);
-	UTicTacHUDWidget* widget = Cast<UTicTacHUDWidget>(PlayerController->GameHUDWidget);
-	if (widget)
+
+	UTicTacHUDWidget* Widget = Cast<UTicTacHUDWidget>(PlayerController->GameHUDWidget);
+	if (Widget && GameState)
 	{
-		widget->UpdateScore(GameState->GetScore(EPlayerType::Player1), GameState->GetScore(EPlayerType::Player2));
+		Widget->UpdateScore(GameState->GetScore(EPlayerType::Player1), GameState->GetScore(EPlayerType::Player2));
 	}
-	UE_LOG(LogTemp, Log, TEXT("%s Score: %d"), *PlayerName, NewScore);
 }
 
 void UTicTacUIManager::UpdatePlayerName(EPlayerType Player, FString Name)
 {
-	if (!GameState)
-		return;
 	if (!PlayerController || !PlayerController->GameHUDWidget)
-	{
 		return;
-	}
-	FString PlayerName = GameState->GetPlayerName(Player);
-	UTicTacHUDWidget* widget = Cast<UTicTacHUDWidget>(PlayerController->GameHUDWidget);
-	if (widget)
-	{
-		widget->UpdateName(GameState->GetPlayerName(EPlayerType::Player1), GameState->GetPlayerName(EPlayerType::Player2));
-	}
 
-	UE_LOG(LogTemp, Log, TEXT("UpdatePlayerName"));
+	UTicTacHUDWidget* Widget = Cast<UTicTacHUDWidget>(PlayerController->GameHUDWidget);
+	if (Widget && GameState)
+	{
+		Widget->UpdateName(GameState->GetPlayerName(EPlayerType::Player1), GameState->GetPlayerName(EPlayerType::Player2));
+	}
 }
 
 void UTicTacUIManager::ShowGameResult(EPlayerType Winner, bool bIsDraw)
 {
-	FString WinnerName;
+	if (!PlayerController)
+		return;
 
-	if (bIsDraw)
-	{
-		WinnerName = TEXT("Draw, No Winner.");
-		UE_LOG(LogTemp, Warning, TEXT("========== IsDraw=========="));
-	}
-	else if (GameState)
-	{
-		WinnerName = GameState->GetPlayerName(Winner);
-		UE_LOG(LogTemp, Warning, TEXT("========== %s Win!=========="), *WinnerName);
-	}
+	FString WinnerName = bIsDraw ? TEXT("Draw!") : (GameState ? GameState->GetPlayerName(Winner) : TEXT(""));
 
-	// 显示游戏结束界面
-	if (PlayerController)
+	PlayerController->HideGameHUD();
+	PlayerController->ShowGameOver();
+
+	UTicTacGameOverWidget* Widget = Cast<UTicTacGameOverWidget>(PlayerController->GameOverWidget);
+	if (Widget && GameState)
 	{
-		PlayerController->ShowGameOver();
-		UTicTacGameOverWidget* widget = Cast<UTicTacGameOverWidget>(PlayerController->GameOverWidget);
-		if (widget)
-		{
-			widget->UpdateWinnerName(WinnerName);
-			widget->UpdateScore(GameState->GetScore(Winner));
-		}
+		Widget->UpdateWinnerName(WinnerName);
+		Widget->UpdateScore(bIsDraw ? 0 : GameState->GetScore(Winner));
 	}
 }

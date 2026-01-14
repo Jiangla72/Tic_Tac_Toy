@@ -63,7 +63,14 @@ public:
     void InitialBoard(int32 nSize);
     void ClearBoard();
 
-    bool SetCellOwner(int32 nIndex, EPlayerType Owner);
+    UFUNCTION(BlueprintPure, Category = "Board")
+    int32 GetBoardSize() const { return BoardSize; }
+    UFUNCTION(BlueprintPure, Category = "Board")
+    TArray<EPlayerType> GetBoardData() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Board")
+    bool SetCellOwner(int32 nIndex, EPlayerType Player);
+
     UFUNCTION(BlueprintPure, Category = "Board")
     EPlayerType GetCellOwner(int32 nIndex) const;
 
@@ -107,7 +114,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Game State")
     void SetCurPlayer(EPlayerType Player);
 protected:
-    // 网络复制支持（未来扩展多人模式）
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:

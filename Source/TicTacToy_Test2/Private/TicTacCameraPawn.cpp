@@ -16,18 +16,17 @@ ATicTacCameraPawn::ATicTacCameraPawn()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
-	SpringArm->bDoCollisionTest = false;  // 关闭碰撞检测
-	SpringArm->bEnableCameraLag = false;  // 关闭摄像机延迟
-	SpringArm->bInheritPitch = false;     // 不继承Pitch
-	SpringArm->bInheritYaw = false;       // 不继承Yaw
-	SpringArm->bInheritRoll = false;      // 不继承Roll
+	SpringArm->bDoCollisionTest = false;  
+	SpringArm->bEnableCameraLag = false;  
+	SpringArm->bInheritPitch = false;     
+	SpringArm->bInheritYaw = false;       
+	SpringArm->bInheritRoll = false;     
 
-	// 创建摄像机
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 
 	CameraHeight = 800.0f;
-	CameraPitch = -90.0f;  // 俯视60度
+	CameraPitch = -90.0f;  
 	CameraFOV = 90.0f;
 
 	SpringArm->TargetArmLength = CameraHeight;

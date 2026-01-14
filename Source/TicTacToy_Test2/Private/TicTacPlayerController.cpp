@@ -31,7 +31,6 @@ void ATicTacPlayerController::BeginPlay()
 		UIManager->Initialize(this);
 	}
 
-	// 订阅GameState事件
 	SubscribeToGameStateEvents();
 
 	FString CurrentLevelName = GetWorld()->GetMapName(); // 获取关卡路径 GetWorld()不为空不用判空
@@ -80,14 +79,12 @@ void ATicTacPlayerController::ShowMainMenu()
 	}
 	UE_LOG(LogTemp, Error, TEXT("show main menu"));
 
-	// 如果Widget已存在，直接显示
 	if (MainMenuWidget)
 	{
 		ShowWidget(MainMenuWidget);
 	}
 	else
 	{
-		// 创建新Widget
 		MainMenuWidget = CreateWidget<UUserWidget>(this, MainMenuWidgetClass);
 		if (MainMenuWidget)
 		{
@@ -126,7 +123,6 @@ void ATicTacPlayerController::ShowGameSettings()
 		if (GameSettingsWidget)
 		{
 			ShowWidget(GameSettingsWidget);
-			UE_LOG(LogTemp, Log, TEXT("游戏设置已显示"));
 		}
 	}
 
@@ -201,6 +197,7 @@ void ATicTacPlayerController::ShowGameOver()
 			ShowWidget(GameOverWidget);
 		}
 	}
+	UE_LOG(LogTemp, Warning, TEXT("========== ShowGameOver=========="));
 
 	SetInputModeUIOnly();
 	bClickInputEnabled = false;
@@ -234,7 +231,6 @@ void ATicTacPlayerController::ShowPauseMenu()
 		}
 	}
 
-	// 暂停游戏
 	UGameplayStatics::SetGamePaused(GetWorld(), true);
 	SetInputModeUIOnly();
 	bClickInputEnabled = false;
@@ -391,7 +387,6 @@ void ATicTacPlayerController::SubscribeToGameStateEvents()
 		return;
 	}
 
-	// 订阅所有事件
 	TicTacGameState->OnBoardUpdated.AddDynamic(this, &ATicTacPlayerController::OnBoardUpdated);
 	TicTacGameState->OnPlayerChanged.AddDynamic(this, &ATicTacPlayerController::OnPlayerChanged);
 	TicTacGameState->OnGameEnded.AddDynamic(this, &ATicTacPlayerController::OnGameEnded);
@@ -402,7 +397,7 @@ void ATicTacPlayerController::SubscribeToGameStateEvents()
 
 void ATicTacPlayerController::OnBoardUpdated(int32 CellIndex, EPlayerType NewOwner)
 {
-	UE_LOG(LogTemp, Verbose, TEXT("OnBoardUpdated: cell %d update，Owner: %d"), CellIndex, (int32)NewOwner);
+	UE_LOG(LogTemp, Verbose, TEXT("OnBoardUpdated: cell %d update, Owner: %d"), CellIndex, (int32)NewOwner);
 	//if (UIManager)
 	//{
 	//	UIManager->UpdateGridCell(CellIndex, NewOwner);
@@ -420,7 +415,7 @@ void ATicTacPlayerController::OnPlayerChanged(EPlayerType NewPlayer)
 
 void ATicTacPlayerController::OnGameEnded(EPlayerType Winner, bool bIsDraw)
 {
-	UE_LOG(LogTemp, Warning, TEXT("UI: OnGameEnded，Winner: %d"), (int32)Winner);
+	UE_LOG(LogTemp, Warning, TEXT("UI: OnGameEnded,Winner: %d"), (int32)Winner);
 
 	if (UIManager)
 	{

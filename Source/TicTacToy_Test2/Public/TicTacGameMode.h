@@ -11,6 +11,8 @@
  * 
  */
 
+enum class EAIDifficulty : uint8;
+class UTicTacAIController;
 class ATicTacBoard;
 class UTicTacGameConfig;
 class ATicTacGameState;
@@ -34,6 +36,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Game")
 	void LoadGameConfig(UTicTacGameConfig* NewConfig);
+
+	UFUNCTION(BlueprintCallable, Category = "Game")
+	UTicTacGameConfig* GetGameConfig();
 
 	UFUNCTION(BlueprintCallable, Category = "Game")
 	void StartNewGame();
@@ -77,6 +82,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Game")
 	int32 GetWinConditionCount() const;
 
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	void InitializeAI(EPlayerType InAIPlayer, EAIDifficulty Difficulty);
+
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	void AIExecuteMove();
 protected:
 	bool CheckHorizontalWin(EPlayerType Player, TArray<int32>& OUT OutCells);
 	bool CheckVerticalWin(EPlayerType Player, TArray<int32>& OUT OutCells);
@@ -85,6 +95,8 @@ protected:
 
 	void IndexToRowColumn(int32 Index, int32& OutRow, int32& OutColumn) const;
 	int32 RowColumnToIndex(int32 Row, int32 Column) const;
+
+	void UpdateCameraForBoard();
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Game")
@@ -104,4 +116,13 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Game State")
 	bool bIsGameActive;
+
+	UPROPERTY()
+	UTicTacAIController* AIController = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game Mode")
+	bool bAIEnabled;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game Mode")
+	EPlayerType AIPlayerType;
 };

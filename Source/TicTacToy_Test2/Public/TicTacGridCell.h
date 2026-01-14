@@ -96,15 +96,12 @@ protected:
 	void SetMaterialColorParameter(FName ParameterName, FLinearColor Color);
 
 public:
-	/** 落子音效 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
 	USoundBase* PlacePieceSound;
 
-	/** 悬停音效 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
 	USoundBase* HoverSound;
 
-	/** 播放音效 */
 	UFUNCTION(BlueprintCallable, Category = "Audio")
 	void PlaySound(USoundBase* Sound, float VolumeMultiplier = 1.0f);
 protected:

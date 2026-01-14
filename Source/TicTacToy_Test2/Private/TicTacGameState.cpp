@@ -58,8 +58,11 @@ void ATicTacGameState::ClearBoard()
 	}
 	WinningCells.Empty();
 	CurrentGameState = EGameState::Playing;
-	UE_LOG(LogTemp, Error, TEXT("Error: ClearBoard %d"), BoardData.Num());
+}
 
+TArray<EPlayerType> ATicTacGameState::GetBoardData() const
+{
+	return BoardData;
 }
 
 bool ATicTacGameState::SetCellOwner(int32 nIndex, EPlayerType CellOwner)
@@ -140,7 +143,7 @@ int32 ATicTacGameState::GetOccupiedCellCount() const
 	int32 CellsCount = 0;
 	for (int32 i = 0; i < BoardData.Num(); i++)
 	{
-		if (BoardData[i] == EPlayerType::None)
+		if (BoardData[i] != EPlayerType::None)
 		{
 			CellsCount++;
 		}
@@ -251,7 +254,7 @@ EPlayerType ATicTacGameState::GetCurrentPlayerTurn() const
 
 bool ATicTacGameState::IsBoardFull() const
 {
-	return GetOccupiedCellCount() == BoardSize;
+	return GetOccupiedCellCount() == BoardData.Num();
 }
 
 void ATicTacGameState::SwitchPlayerTurn()

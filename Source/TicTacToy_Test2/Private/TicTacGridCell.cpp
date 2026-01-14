@@ -19,28 +19,27 @@ ATicTacGridCell::ATicTacGridCell()
 	RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	RootComponent = RootComp;
 
-	// ´´½¨µ×°åÍø¸ñÌå
+	// åˆ›å»ºåº•æ¿ç½‘æ ¼ä½“
 	BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
 	BaseMesh->SetupAttachment(RootComponent);
 	BaseMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	BaseMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	BaseMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
-	// ÆôÓÃÊó±ê½»»¥
 	BaseMesh->SetGenerateOverlapEvents(true);
 
-	// ´´½¨Æå×ÓÍø¸ñÌå
+	// åˆ›å»ºæ£‹å­ç½‘æ ¼ä½“
 	PieceMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PieceMesh"));
 	PieceMesh->SetupAttachment(BaseMesh);
 	PieceMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	PieceMesh->SetVisibility(false); // ³õÊ¼Òş²Ø
+	PieceMesh->SetVisibility(false); 
 
-	//// ¼ÓÔØÄ¬ÈÏÍø¸ñÌå !¸Ä³ÉÔÚ±à¼­Æ÷ÖĞÉèÖÃ
+	//// åŠ è½½é»˜è®¤ç½‘æ ¼ä½“ !æ”¹æˆåœ¨ç¼–è¾‘å™¨ä¸­è®¾ç½®
 	//static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube"));
 	//if (CubeMesh.Succeeded())
 	//{
 	//	BaseMesh->SetStaticMesh(CubeMesh.Object);
-	//	BaseMesh->SetRelativeScale3D(FVector(1.0f, 1.0f, 0.1f)); // ±âÆ½µÄ¸ñ×Ó
+	//	BaseMesh->SetRelativeScale3D(FVector(1.0f, 1.0f, 0.1f)); 
 	//}
 
 	//static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere"));
@@ -48,10 +47,9 @@ ATicTacGridCell::ATicTacGridCell()
 	//{
 	//	PieceMesh->SetStaticMesh(SphereMesh.Object);
 	//	PieceMesh->SetRelativeScale3D(FVector(0.6f, 0.6f, 0.6f));
-	//	PieceMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 30.0f)); // Ğü¸¡ÔÚ¸ñ×ÓÉÏ·½
+	//	PieceMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 30.0f)); 
 	//}
 
-	// ³õÊ¼»¯ÊôĞÔ
 	GridIndex = -1;
 	Row = -1;
 	Column = -1;
@@ -59,7 +57,6 @@ ATicTacGridCell::ATicTacGridCell()
 	bIsOccupied = false;
 	bIsWinningCell = false;
 
-	// Ìí¼ÓActor±êÇ©£¨ÓÃÓÚÉäÏß¼ì²âÊ¶±ğ£©
 	Tags.Add(TEXT("GridCell"));
 }
 
@@ -95,9 +92,8 @@ void ATicTacGridCell::InitializeCell(int32 InIndex, int32 InRow, int32 InColumn)
 	bIsOccupied = false;
 	bIsWinningCell = false;
 
-	// ¸üĞÂActorÃû³Æ£¨·½±ãµ÷ÊÔ£©
-	FString NewName = FString::Printf(TEXT("GridCell_%d_%d"), Row, Column);
-	SetActorLabel(NewName);
+	//FString NewName = FString::Printf(TEXT("GridCell_%d_%d"), Row, Column);
+	//SetActorLabel(NewName);
 }
 
 
@@ -185,7 +181,6 @@ void ATicTacGridCell::PlayPlacementAnimation()
 			}
 		}, 0.01f, true);
 
-	// 0.3ÃëºóÍ£Ö¹¶¯»­
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
 		{
 			if (PieceMesh)
@@ -229,15 +224,8 @@ void ATicTacGridCell::OnMouseClick(UPrimitiveComponent* ClickedComponent, FKey B
 	APlayerController* PC = GetWorld()->GetFirstPlayerController();
 	if (PC)
 	{
-		// µ÷ÓÃPlayerControllerµÄHandleCellClick·½·¨
-		 //PC->HandleCellClick(GridIndex);  // ĞèÒª×ª»»ÎªÕıÈ·µÄÀàĞÍ
 
-		// ÁÙÊ±·½°¸£ºÖ±½Óµ÷ÓÃGameMode
-		//ATicTacGameMode* GameMode = Cast<ATicTacGameMode>(GetWorld()->GetAuthGameMode());
-		//if (GameMode)
-		//{
-		//	GameMode->ProcessPlayerMove(GridIndex);
-		//}
+
 	}
 }
 
@@ -249,7 +237,6 @@ void ATicTacGridCell::UpdateCellMaterial()
 	}
 	UE_LOG(LogTemp, Log, TEXT("UpdateCellMaterial"));
 
-	// ¸ù¾İ×´Ì¬Ñ¡Ôñ²ÄÖÊ
 	UMaterialInterface* MaterialToUse = DefaultMaterial;
 
 	if (bIsWinningCell && WinningCellMaterial)
@@ -301,7 +288,6 @@ void ATicTacGridCell::UpdatePieceDisplay()
 	}
 	else
 	{
-		// Òş²ØÆå×Ó
 		PieceMesh->SetVisibility(false);
 	}
 }

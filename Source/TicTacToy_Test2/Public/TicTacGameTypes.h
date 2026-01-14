@@ -72,3 +72,53 @@ struct FGameResult
 	{}
 
 };
+
+UENUM(BlueprintType)
+enum class EAIDifficulty : uint8
+{
+	Easy        UMETA(DisplayName = "Easy"),
+	Medium      UMETA(DisplayName = "Medium"),
+	Hard        UMETA(DisplayName = "Hard"),
+};
+
+UCLASS()
+class UMyEnum : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "Enum")
+	static TArray<FString> GetAllEnumDisplayNames_AIDifficulty()
+	{
+		
+		TArray<FString> DisplayNames;
+		UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, TEXT("EAIDifficulty"));
+
+		if (Enum)
+		{
+			for (int32 i = 0; i < Enum->NumEnums(); i++)
+			{
+				DisplayNames.Add(Enum->GetDisplayNameTextByIndex(i).ToString());
+			}
+		}
+		return DisplayNames;
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "Enum")
+	static EAIDifficulty GetEnumFromDisplayName_AIDifficulty(const FString& DisplayName)
+	{
+		UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, TEXT("EAIDifficulty"));
+
+		if (Enum)
+		{
+			for (int32 i = 0; i < Enum->NumEnums(); i++)
+			{
+				if (Enum->GetDisplayNameTextByIndex(i).ToString() == DisplayName)
+				{
+					return static_cast<EAIDifficulty>(i);
+				}
+			}
+		}
+		return EAIDifficulty::Easy;
+	};
+};

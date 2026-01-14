@@ -2,6 +2,8 @@
 
 
 #include "TicTacGameMode.h"
+
+#include "TicTacAIController.h"
 #include "TicTacGameConfig.h"
 #include "TicTacGameState.h"
 #include "TicTacPlayerController.h"
@@ -63,14 +65,10 @@ void ATicTacGameMode::BeginPlay()
 	TicTacGameState->SetPlayerName(EPlayerType::Player1, GameConfig->Player1Name);
 	TicTacGameState->SetPlayerName(EPlayerType::Player2, GameConfig->Player2Name);
 
-	//FTimerHandle StartGameTimerHandle;
-	//GetWorld()->GetTimerManager().SetTimer(
-	//	StartGameTimerHandle,
-	//	this,
-	//	&ATicTacGameMode::StartNewGame,
-	//	0.1f,  // 延迟0.1秒
-	//	false  // 不循环
-	//);
+	if (GameConfig->bEnableAI)
+	{
+		InitializeAI(GameConfig->AIPlayerType, GameConfig->Difficulty);
+	}
 
 }
 
@@ -92,11 +90,29 @@ void ATicTacGameMode::LoadGameConfig(UTicTacGameConfig* NewConfig)
 		{
 			Board->ReLoadBoard();
 		}
-
-		if (bIsGameActive)
+		ATicTacGameState* TicTacGameState = GetTicTacGameState();
+		if (!TicTacGameState)
 		{
+			return;
+		}
+
+		TicTacGameState->SetPlayerName(EPlayerType::Player1, GameConfig->Player1Name);
+		TicTacGameState->SetPlayerName(EPlayerType::Player2, GameConfig->Player2Name);
+		if (GameConfig->bEnableAI)
+		{
+			InitializeAI(GameConfig->AIPlayerType, GameConfig->Difficulty);
+		}
+		else
+		{
+			bAIEnabled = false;
+			AIPlayerType = EPlayerType::None;
 		}
 	}
+}
+
+UTicTacGameConfig* ATicTacGameMode::GetGameConfig()
+{
+	return GameConfig; 
 }
 
 void ATicTacGameMode::StartNewGame()
@@ -113,6 +129,7 @@ void ATicTacGameMode::StartNewGame()
 	{
 		TicTacGameState->InitialBoard(GameConfig->BoardSize);
 		TicTacGameState->SetGameState(EGameState::Playing);
+		TicTacGameState->ResetScores();
 	}
 	SwitchPlayer();
 	if (!Board && BoardClass)
@@ -133,31 +150,15 @@ void ATicTacGameMode::StartNewGame()
 			if (PC)
 			{
 				PC->SetBoard(Board);
-				ATicTacCameraPawn* CameraPawn = Cast<ATicTacCameraPawn>(PC->GetPawn());
-				if (CameraPawn)
-				{
-					float BoardSizeFloat = static_cast<float>(GameConfig->BoardSize);
-					float CalculatedHeight = 400.0f + (BoardSizeFloat - 3.0f) * 150.0f;
-
-					CameraPawn->CameraHeight = CalculatedHeight;
-					CameraPawn->ApplyCameraSettings();
-
-					FVector BoardCenter = Board->GetActorLocation();
-					CameraPawn->FocusOnLocation(BoardCenter);
-
-					UE_LOG(LogTemp, Log, TEXT("change camera size: %d×%d, height: %.1f"),
-						GameConfig->BoardSize,
-						GameConfig->BoardSize,
-						CalculatedHeight);
-				}
 			}
 		}
 	}
 	else if (Board)
 	{
-		// 如果Board已存在，重置它
 		Board->ResetAllCells();
 	}
+
+	UpdateCameraForBoard();
 
 	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PC)
@@ -186,6 +187,9 @@ void ATicTacGameMode::ReStartGame()
 		Board->ResetAllCells();
 		Board->ClearHighlights();
 	}
+
+	UpdateCameraForBoard();
+
 	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PC)
 	{
@@ -224,7 +228,6 @@ void ATicTacGameMode::EndGame(EPlayerType Winner, bool bIsDraw)
 void ATicTacGameMode::TogglePause()
 {
 	UE_LOG(LogTemp, Warning, TEXT("==========TogglePause=========="));
-
 	bool bIsPaused = UGameplayStatics::IsGamePaused(this);
 	UGameplayStatics::SetGamePaused(this, !bIsPaused);
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
@@ -252,12 +255,23 @@ void ATicTacGameMode::SwitchPlayer()
 		: EPlayerType::Player1;
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
 	TicTacGameState->SwitchPlayerTurn();
+	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
+
+	if (bAIEnabled && CurrentPlayer == AIPlayerType)
+	{
+		UE_LOG(LogTemp, Log, TEXT("AI Turn"));
+		PC->SetInputModeUIOnly();
+		AIExecuteMove();
+	}
+	else
+	{
+		PC->SetInputModeGameAndUI();
+	}
 }
 
 bool ATicTacGameMode::ProcessPlayerMove(int32 CellIndex)
 {
 	UE_LOG(LogTemp, Warning, TEXT("==========ProcessPlayerMove=========="));
-
 	if (!bIsGameActive)
 	{
 		return false;
@@ -299,7 +313,6 @@ bool ATicTacGameMode::ProcessPlayerMove(int32 CellIndex)
 	}
 	else
 	{
-		TicTacGameState->AddScore(CurrentPlayer);
 		SwitchPlayer();
 	}
 	return true;
@@ -308,7 +321,6 @@ bool ATicTacGameMode::ProcessPlayerMove(int32 CellIndex)
 FGameResult ATicTacGameMode::CheckGameResult()
 {
 	UE_LOG(LogTemp, Warning, TEXT("==========CheckGameResult=========="));
-
 	FGameResult Result;
 	TArray<int32> WinningCells;
 
@@ -340,10 +352,18 @@ bool ATicTacGameMode::CheckWinCondition(EPlayerType Player, TArray<int32>& OutWi
 		return true;
 	if (CheckVerticalWin(Player, OutWinningCells))
 		return true;
-	if (CheckDiagonalWin(Player, OutWinningCells)) 
-		return true;
-	if (CheckAntiDiagonalWin(Player, OutWinningCells)) 
-		return true;
+	bool bAllowDiagonal = true;
+	if (GameConfig)
+	{
+		bAllowDiagonal = GameConfig->bAllowDiagonalWins;
+	}
+	if (bAllowDiagonal)
+	{
+		if (CheckDiagonalWin(Player, OutWinningCells))
+			return true;
+		if (CheckAntiDiagonalWin(Player, OutWinningCells))
+			return true;
+	}
 
 
 	return false;
@@ -353,6 +373,8 @@ bool ATicTacGameMode::CheckDrawCondition() const
 {
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
 	if (!TicTacGameState) return false;
+	if (GameConfig && !GameConfig->bEnableDrawCondition) 
+		return false;
 
 	int32 TotalCells = GetBoardSize() * GetBoardSize();
 	for (int32 i = 0; i < TotalCells; i++)
@@ -389,6 +411,51 @@ int32 ATicTacGameMode::GetWinConditionCount() const
 	return 3;
 }
 
+void ATicTacGameMode::InitializeAI(EPlayerType InAIPlayer, EAIDifficulty Difficulty)
+{
+	if (!AIController)
+	{
+		AIController = NewObject<UTicTacAIController>(this);
+	}
+
+	if (AIController)
+	{
+		AIController->Initialize(this, InAIPlayer);
+		AIController->SetDifficulty(Difficulty);
+
+		bAIEnabled = true;
+		AIPlayerType = InAIPlayer;
+
+		UE_LOG(LogTemp, Error, TEXT("InitializeAI，Player: %d, defficulty: %d"), AIPlayerType, (int32)Difficulty);
+	}
+}
+
+void ATicTacGameMode::AIExecuteMove()
+{
+	if (!AIController || !bAIEnabled)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AI UnEnable"));
+		return;
+	}
+
+	//int32 BestMove = AIController->MakeMove();
+
+	FTimerHandle AIThinkTimer;
+	GetWorld()->GetTimerManager().SetTimer(
+		AIThinkTimer,
+		[this]()
+		{
+			int32 BestMove = AIController->MakeMove();
+			if (BestMove >= 0)
+			{
+				ProcessPlayerMove(BestMove);
+			}
+		},
+		0.1f, 
+		false
+	);
+}
+
 bool ATicTacGameMode::CheckHorizontalWin(EPlayerType Player, TArray<int32>& OutCells)
 {
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
@@ -401,7 +468,7 @@ bool ATicTacGameMode::CheckHorizontalWin(EPlayerType Player, TArray<int32>& OutC
 	{
 		int32 StartCol = 0;
 		TArray<int32> CurrentWinningCells;
-		for (int32 Col = 0; Col <= BoardSize; ++Col)
+		for (int32 Col = 0; Col < BoardSize; ++Col)
 		{
 			int32 nIndex = RowColumnToIndex(Row, Col);
 
@@ -438,7 +505,7 @@ bool ATicTacGameMode::CheckVerticalWin(EPlayerType Player, TArray<int32>& OutCel
 	int32 WinCount = GetWinConditionCount();
 	bool bWin = false;
 
-	for (int32 Col = 0; Col <= BoardSize; ++Col)
+	for (int32 Col = 0; Col < BoardSize; ++Col)
 	{
 		int32 StartRow = 0;
 		TArray<int32> CurrentWinningCells;
@@ -554,4 +621,33 @@ int32 ATicTacGameMode::RowColumnToIndex(int32 Row, int32 Column) const
 {
 	int32 BoardSize = GetBoardSize();
 	return Row * BoardSize + Column;
+}
+
+void ATicTacGameMode::UpdateCameraForBoard()
+{
+	if (!Board || !GameConfig)
+	{
+		return;
+	}
+
+	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (!PC)
+	{
+		return;
+	}
+
+	ATicTacCameraPawn* CameraPawn = Cast<ATicTacCameraPawn>(PC->GetPawn());
+	if (!CameraPawn)
+	{
+		return;
+	}
+
+	float BoardSizeFloat = static_cast<float>(GameConfig->BoardSize);
+	float CalculatedHeight = 400.0f + (BoardSizeFloat - 3.0f) * 150.0f;
+
+	CameraPawn->CameraHeight = CalculatedHeight;
+	CameraPawn->ApplyCameraSettings();
+
+	FVector BoardCenter = Board->GetActorLocation();
+	CameraPawn->FocusOnLocation(BoardCenter);
 }

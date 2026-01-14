@@ -14,11 +14,14 @@ UTicTacGameConfig::UTicTacGameConfig()
 	Player2Name = TEXT("Player 2");
 	Player1Color = FLinearColor(255,255,255,255);
 	Player2Color = FLinearColor(255, 255, 255, 255);
-	
+	bEnableAI = true;
+	AIPlayerType = EPlayerType::Player2;
+	Difficulty = EAIDifficulty::Easy;
+
 	bAllowDiagonalWins = true;
 	bAllowUndo = true;
 	bEnableTurnTimeLimit = false;
-	TurnTimeLimit = 0.0f; // No time limit by default
+	TurnTimeLimit = 0.0f;
 	bEnableSoundEffects = true;
 	bEnableBackgroundMusic = true;
 
