@@ -77,7 +77,7 @@ void ATicTacPlayerController::ShowMainMenu()
 		UE_LOG(LogTemp, Error, TEXT("MainMenuWidgetClass error"));
 		return;
 	}
-	UE_LOG(LogTemp, Error, TEXT("show main menu"));
+	UE_LOG(LogTemp, Log, TEXT("show main menu"));
 
 	if (MainMenuWidget)
 	{
@@ -97,7 +97,7 @@ void ATicTacPlayerController::ShowMainMenu()
 
 void ATicTacPlayerController::HideMainMenu()
 {
-	UE_LOG(LogTemp, Error, TEXT("hide main menu"));
+	UE_LOG(LogTemp, Log, TEXT("hide main menu"));
 
 	if (MainMenuWidgetClass)
 	{
@@ -143,7 +143,7 @@ void ATicTacPlayerController::ShowGameHUD()
 
 	if (!GameHUDWidgetClass)
 	{
-		UE_LOG(LogTemp, Log, TEXT("GameHUDWidgetClass == null"));
+		UE_LOG(LogTemp, Error, TEXT("GameHUDWidgetClass == null"));
 		return;
 	}
 
@@ -275,7 +275,7 @@ void ATicTacPlayerController::OnMouseLeftClick()
 	UE_LOG(LogTemp, Log, TEXT("OnMouseLeftClick"));
 	if (!bClickInputEnabled)
 	{
-		UE_LOG(LogTemp, Log, TEXT("bClickInputEnabled = false"));
+		UE_LOG(LogTemp, Warning, TEXT("bClickInputEnabled = false"));
 		return;
 	}
 	FHitResult HitResult;
@@ -373,7 +373,7 @@ void ATicTacPlayerController::SubscribeToGameStateEvents()
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
 	if (!TicTacGameState)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SubscribeToGameStateEvents failed"));
+		UE_LOG(LogTemp, Error, TEXT("SubscribeToGameStateEvents failed"));
 
 		// 延迟重试
 		FTimerHandle RetryTimer;

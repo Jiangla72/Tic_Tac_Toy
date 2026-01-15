@@ -45,7 +45,12 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Game State")
     EGameState CurrentGameState;
 
-    EPlayerType playerTurn;
+    UPROPERTY(BlueprintReadOnly, Category = "Game State")
+    EPlayerType CurPlayerTurn;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Game State")
+    FGameResult GameResult;
+
     UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnBoardUpdatedDelegate OnBoardUpdated;
     UPROPERTY(BlueprintAssignable, Category = "Events")
@@ -76,17 +81,25 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "Board")
     bool IsCellOccupied(int32 nIndex) const;
+    
+	UFUNCTION(BlueprintPure, Category = "Board")
     TArray<int32> GetOccupiedCells() const;
+    
+	UFUNCTION(BlueprintPure, Category = "Board")
     int32 GetOccupiedCellCount() const;
     UFUNCTION(BlueprintPure, Category = "Board")
     bool IsBoardFull() const;
 
     UFUNCTION(BlueprintPure, Category = "Board")
     bool IsWinningCell(int32 CellIndex) const;
-    void SetWinningCells(const TArray<int32>& Cells);
-	TArray<int32> GetWinningCells() const;
 
-	TArray<int32> GetEmptyCells() const;
+    void SetWinningCells(const TArray<int32>& Cells);
+    
+	UFUNCTION(BlueprintPure, Category = "Board")
+    TArray<int32> GetWinningCells() const;
+
+    UFUNCTION(BlueprintPure, Category = "Board")
+    TArray<int32> GetEmptyCells() const;
 
     UFUNCTION(BlueprintCallable, Category = "Players")
     void SetPlayerName(EPlayerType Player, const FString& Name);
@@ -113,15 +126,5 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Game State")
     void SetCurPlayer(EPlayerType Player);
-protected:
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-protected:
-
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "TicTacToe")
-	EPlayerType CurrentPlayerTurn;
-	
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "TicTacToe")
-	FGameResult GameResult;
 
 };

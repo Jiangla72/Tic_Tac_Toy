@@ -36,6 +36,7 @@ void ATicTacGameMode::BeginPlay()
 	Super::BeginPlay();
 	if (!GameConfig)
 	{
+		///Game/文件夹路径/资源包名.资源名 资源包名==资源名
 		GameConfig = LoadObject<UTicTacGameConfig>(nullptr, TEXT("/Game/Config/DA_GameConfig_Default.DA_GameConfig_Default"));
 
 		if (GameConfig)
@@ -426,7 +427,7 @@ void ATicTacGameMode::InitializeAI(EPlayerType InAIPlayer, EAIDifficulty Difficu
 		bAIEnabled = true;
 		AIPlayerType = InAIPlayer;
 
-		UE_LOG(LogTemp, Error, TEXT("InitializeAI，Player: %d, defficulty: %d"), AIPlayerType, (int32)Difficulty);
+		UE_LOG(LogTemp, Warning, TEXT("InitializeAI，Player: %d, defficulty: %d"), AIPlayerType, (int32)Difficulty);
 	}
 }
 

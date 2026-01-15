@@ -15,13 +15,14 @@ void UTicTacAIController::Initialize(ATicTacGameMode* InGameMode, EPlayerType In
     {
         GameState = GameMode->GetTicTacGameState();
     }
+    TranspositionTable.Empty();
 }
 
 int32 UTicTacAIController::MakeMove()
 {
     if (!GameState)
     {
-        UE_LOG(LogTemp, Error, TEXT("AI cannot make decision: GameState is null"));
+        UE_LOG(LogTemp, Error, TEXT("AI GameState is null"));
         return -1;
     }
 
@@ -67,14 +68,12 @@ int32 UTicTacAIController::MakeMediumMove()
 {
     TArray<EPlayerType> Board = GameState->GetBoardData();
     TArray<int32> EmptyCells = GameState->GetEmptyCells();
+    int32 BoardSize = GameState->GetBoardSize();
 
     if (EmptyCells.Num() == 0)
         return -1;
 
-    EPlayerType Opponent = (AIPlayer == EPlayerType::Player1) ?
-        EPlayerType::Player2 : EPlayerType::Player1;
-
-    // Check if AI can win
+    // ai 直接赢
     for (int32 Cell : EmptyCells)
     {
         TArray<EPlayerType> TestBoard = Board;
@@ -86,6 +85,9 @@ int32 UTicTacAIController::MakeMediumMove()
         }
     }
 
+    // 阻止对手赢
+    EPlayerType Opponent = (AIPlayer == EPlayerType::Player1) ?
+        EPlayerType::Player2 : EPlayerType::Player1;
     for (int32 Cell : EmptyCells)
     {
         TArray<EPlayerType> TestBoard = Board;
@@ -97,42 +99,41 @@ int32 UTicTacAIController::MakeMediumMove()
         }
     }
     
-    int32 BoardSize = GameState->GetBoardSize();
-    if (BoardSize > 3)
+    for (int32 Cell : EmptyCells)
     {
-        int32 BestCell = -1;
-        int32 BestThreatCount = 0;
-        
-        for (int32 Cell : EmptyCells)
+        TArray<EPlayerType> TestBoard = Board;
+        SimulateMove(TestBoard, Cell, AIPlayer);
+        int32 ThreatCount = CountThreats(TestBoard, Cell, AIPlayer);
+        // 占领两个威胁点位
+        if (ThreatCount >= 2)
         {
-            TArray<EPlayerType> TestBoard = Board;
-            SimulateMove(TestBoard, Cell, AIPlayer);
-            int32 ThreatCount = CountThreats(TestBoard, Cell, AIPlayer);
-            
-            if (ThreatCount > BestThreatCount)
-            {
-                BestThreatCount = ThreatCount;
-                BestCell = Cell;
-            }
+            return Cell;
         }
-        
-        if (BestThreatCount >= 2)
+    }
+
+    for (int32 Cell : EmptyCells)
+    {
+        TArray<EPlayerType> TestBoard = Board;
+        SimulateMove(TestBoard, Cell, Opponent);
+        int32 ThreatCount = CountThreats(TestBoard, Cell, Opponent);
+        // 阻止对手占领两个威胁点位
+        if (ThreatCount >= 2)
         {
-            return BestCell;
+            return Cell;
         }
     }
     
     if (BoardSize % 2 == 1)
     {
         int32 Center = (BoardSize / 2) * BoardSize + (BoardSize / 2);
-        
+        // 有中心先占领中心
         if (EmptyCells.Contains(Center))
         {
             return Center;
         }
     }
 
-    // Take corners
+    //先占角落
     TArray<int32> Corners = { 0, BoardSize - 1,
         BoardSize * (BoardSize - 1), BoardSize * BoardSize - 1 };
 
@@ -155,8 +156,6 @@ int32 UTicTacAIController::MakeHardMove()
     if (EmptyCells.Num() == 0)
         return -1;
 
-    TranspositionTable.Empty();
-    
     TArray<int32> SortedMoves = SortMovesByPriority(EmptyCells, Board);
 
     for (int32 Cell : EmptyCells)
@@ -183,10 +182,21 @@ int32 UTicTacAIController::MakeHardMove()
     for (int32 Cell : EmptyCells)
     {
         TArray<EPlayerType> TestBoard = Board;
+        SimulateMove(TestBoard, Cell, AIPlayer);
+        int32 ThreatCount = CountThreats(TestBoard, Cell, AIPlayer);
+        // 占领两个威胁点位
+        if (ThreatCount >= 2)
+        {
+            return Cell;
+        }
+    }
+
+    for (int32 Cell : EmptyCells)
+    {
+        TArray<EPlayerType> TestBoard = Board;
         SimulateMove(TestBoard, Cell, Opponent);
-        
         int32 ThreatCount = CountThreats(TestBoard, Cell, Opponent);
-        
+        // 阻止对手占领两个威胁点位
         if (ThreatCount >= 2)
         {
             return Cell;
@@ -195,8 +205,8 @@ int32 UTicTacAIController::MakeHardMove()
 
     int32 BestMove = -1;
     int32 BestScore = INT_MIN;
-    int32 Alpha = INT_MIN;
-    int32 Beta = INT_MAX;
+    int32 Alpha = INT_MIN; // ai 最次要拿的分数 当前轮最好的分数 之后只会更好（每次遍历的最大值）
+    int32 Beta = INT_MAX; // 玩家想让ai拿到的分数 当前最差的分数，继续遍历只会更差（每次遍历的最小值）
 
     for (int32 Cell : SortedMoves)
     {
@@ -228,10 +238,10 @@ int32 UTicTacAIController::Minimax(TArray<EPlayerType>& Board, int32 Depth, bool
         EPlayerType::Player2 : EPlayerType::Player1;
 
     if (CheckWinner(Board, AIPlayer))
-        return 100 - Depth;
+        return 100 - Depth; // 深度越小越好
 
     if (CheckWinner(Board, Opponent))
-        return Depth - 100;
+        return Depth - 100; // 深度越小分数越差，对玩家越好
 
     TArray<int32> EmptyCells = GetEmptyCells(Board);
     if (EmptyCells.Num() == 0)
@@ -259,6 +269,7 @@ int32 UTicTacAIController::Minimax(TArray<EPlayerType>& Board, int32 Depth, bool
     
     if (EmptyCells.Num() <= 10)
     {
+        // 空位少的时候可以适当放宽递归次数，但是肯定不超过剩余格子数
         MaxDepth = FMath::Min(MaxDepth + 2, EmptyCells.Num());
     }
     
@@ -275,17 +286,20 @@ int32 UTicTacAIController::Minimax(TArray<EPlayerType>& Board, int32 Depth, bool
 
     if (bIsMaximizing)
     {
+        // 当前是ai 轮次
         int32 MaxScore = INT_MIN;
 
         for (int32 Cell : EmptyCells)
         {
             SimulateMove(Board, Cell, AIPlayer);
+            // 计算下一轮玩家轮次（玩家只会返回最小分数，我们需要其中最大的那个分数
             int32 Score = Minimax(Board, Depth + 1, false, Alpha, Beta);
             UndoMove(Board, Cell);
 
             MaxScore = FMath::Max(MaxScore, Score);
             Alpha = FMath::Max(Alpha, Score);
 
+            // ai分数已经超过上一玩家轮次的最小分数，玩家肯定不要之后的结果了，直接剪枝
             if (Beta <= Alpha)
                 break;
         }
@@ -294,6 +308,7 @@ int32 UTicTacAIController::Minimax(TArray<EPlayerType>& Board, int32 Depth, bool
     }
     else
     {
+        // 当前是玩家 轮次
         int32 MinScore = INT_MAX;
 
         for (int32 Cell : EmptyCells)
@@ -656,11 +671,10 @@ TArray<int32> UTicTacAIController::SortMovesByPriority(const TArray<int32>& Move
         int32 Row = Move / BoardSize;
         int32 Col = Move % BoardSize;
         
-        // Priority based on distance to center
         int32 DistanceToCenter = FMath::Abs(Row - CenterRow) + FMath::Abs(Col - CenterCol);
         int32 Priority = 100 - DistanceToCenter * 10;
         
-        // Bonus for adjacent pieces
+        // 搜索空格周围的8个格子
         for (int32 dRow = -1; dRow <= 1; ++dRow)
         {
             for (int32 dCol = -1; dCol <= 1; ++dCol)
@@ -676,6 +690,7 @@ TArray<int32> UTicTacAIController::SortMovesByPriority(const TArray<int32>& Move
                     int32 AdjIndex = AdjRow * BoardSize + AdjCol;
                     if (Board.IsValidIndex(AdjIndex) && Board[AdjIndex] != EPlayerType::None)
                     {
+                        // 如果空格周围被占领加分
                         Priority += 20;
                     }
                 }

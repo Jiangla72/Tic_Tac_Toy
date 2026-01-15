@@ -21,6 +21,7 @@ ATicTacCameraPawn::ATicTacCameraPawn()
 	SpringArm->bInheritPitch = false;     
 	SpringArm->bInheritYaw = false;       
 	SpringArm->bInheritRoll = false;     
+	SpringArm->bUsePawnControlRotation = false;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
@@ -48,13 +49,13 @@ void ATicTacCameraPawn::BeginPlay()
 
 void ATicTacCameraPawn::ApplyCameraSettings()
 {
-	if (SpringArm)
+	if (SpringArm && SpringArm->IsValidLowLevel())
 	{
 		SpringArm->TargetArmLength = CameraHeight;
 		SpringArm->SetRelativeRotation(FRotator(CameraPitch, 0.0f, 0.0f));
 	}
 
-	if (Camera)
+	if (Camera && Camera->IsValidLowLevel())
 	{
 		Camera->SetFieldOfView(CameraFOV);
 	}

@@ -235,7 +235,7 @@ void ATicTacGridCell::UpdateCellMaterial()
 	{
 		return;
 	}
-	UE_LOG(LogTemp, Log, TEXT("UpdateCellMaterial"));
+	//UE_LOG(LogTemp, Log, TEXT("UpdateCellMaterial"));
 
 	UMaterialInterface* MaterialToUse = DefaultMaterial;
 

@@ -92,7 +92,7 @@ public:
 	{
 		
 		TArray<FString> DisplayNames;
-		UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, TEXT("EAIDifficulty"));
+		UEnum* Enum = StaticEnum<EAIDifficulty>();
 
 		if (Enum)
 		{
@@ -107,7 +107,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Enum")
 	static EAIDifficulty GetEnumFromDisplayName_AIDifficulty(const FString& DisplayName)
 	{
-		UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, TEXT("EAIDifficulty"));
+		UEnum* Enum = StaticEnum<EAIDifficulty>();
 
 		if (Enum)
 		{

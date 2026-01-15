@@ -13,7 +13,7 @@ ATicTacGameState::ATicTacGameState()
 	Player2Name = TEXT("2");
 	Player2Score = 0;
 	CurrentGameState = EGameState::NotStarted;
-	CurrentPlayerTurn = EPlayerType::None;
+	CurPlayerTurn = EPlayerType::None;
 
 	int32 CellNum = BoardSize * BoardSize;
 
@@ -249,7 +249,7 @@ void ATicTacGameState::SetGameState(EGameState NewState)
 
 EPlayerType ATicTacGameState::GetCurrentPlayerTurn() const
 {
-	return playerTurn;
+	return CurPlayerTurn;
 }
 
 bool ATicTacGameState::IsBoardFull() const
@@ -259,17 +259,12 @@ bool ATicTacGameState::IsBoardFull() const
 
 void ATicTacGameState::SwitchPlayerTurn()
 {
-	playerTurn = (playerTurn == EPlayerType::Player1) ? EPlayerType::Player2 : EPlayerType::Player1;
-	SetCurPlayer(playerTurn);
+	CurPlayerTurn = (CurPlayerTurn == EPlayerType::Player1) ? EPlayerType::Player2 : EPlayerType::Player1;
+	SetCurPlayer(CurPlayerTurn);
 }
 
 void ATicTacGameState::SetCurPlayer(EPlayerType Player)
 {
-	playerTurn = Player;
-	OnPlayerChanged.Broadcast(playerTurn);
-}
-
-void ATicTacGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	CurPlayerTurn = Player;
+	OnPlayerChanged.Broadcast(CurPlayerTurn);
 }
