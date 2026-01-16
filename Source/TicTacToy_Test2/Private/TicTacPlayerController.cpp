@@ -165,7 +165,7 @@ void ATicTacPlayerController::ShowGameHUD()
 
 		UIManager->UpdateGameHUD();
 	}
-	SetInputModeGameAndUI();
+	//SetInputModeGameAndUI();
 	bClickInputEnabled = true;
 }
 

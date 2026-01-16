@@ -60,6 +60,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category= "Game")
 	void SwitchPlayer();
+	UFUNCTION(BlueprintCallable, Category = "Game State")
+	void SetCurPlayer(EPlayerType Player);
 
 	UFUNCTION(BlueprintCallable, Category = "Game")
 	bool ProcessPlayerMove(int32 CellIndex);
@@ -110,6 +112,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Game State")
 	EPlayerType CurrentPlayer;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Game State")
+	EPlayerType LastFirstPlayer;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Game State")
 	int32 TurnCount;

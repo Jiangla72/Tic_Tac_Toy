@@ -43,6 +43,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings")
 	FLinearColor Player2Color;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings")
+	EPlayerType FirstPlayer;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	bool bEnableAI;
 

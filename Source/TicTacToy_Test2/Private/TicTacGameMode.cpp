@@ -19,6 +19,7 @@ ATicTacGameMode::ATicTacGameMode()
 	PrimaryActorTick.bCanEverTick = true;
 
 	CurrentPlayer = EPlayerType::None;
+	LastFirstPlayer = EPlayerType::None;
     TurnCount = 0;
     bIsGameActive = false;
     GameConfig = nullptr;
@@ -96,7 +97,6 @@ void ATicTacGameMode::LoadGameConfig(UTicTacGameConfig* NewConfig)
 		{
 			return;
 		}
-
 		TicTacGameState->SetPlayerName(EPlayerType::Player1, GameConfig->Player1Name);
 		TicTacGameState->SetPlayerName(EPlayerType::Player2, GameConfig->Player2Name);
 		if (GameConfig->bEnableAI)
@@ -132,7 +132,6 @@ void ATicTacGameMode::StartNewGame()
 		TicTacGameState->SetGameState(EGameState::Playing);
 		TicTacGameState->ResetScores();
 	}
-	SwitchPlayer();
 	if (!Board && BoardClass)
 	{
 		FActorSpawnParameters SpawnParams;
@@ -168,11 +167,13 @@ void ATicTacGameMode::StartNewGame()
 		PC->ShowGameHUD();
 		bIsGameActive = true;
 	}
+	LastFirstPlayer = GameConfig->FirstPlayer;
+	SetCurPlayer(GameConfig->FirstPlayer);
 }
 
 void ATicTacGameMode::ReStartGame()
 {
-	ResetData();
+	//ResetData();
 	UE_LOG(LogTemp, Warning, TEXT("========== ReStartGame=========="));
 
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
@@ -181,7 +182,6 @@ void ATicTacGameMode::ReStartGame()
 		TicTacGameState->ClearBoard();
 		TicTacGameState->SetGameState(EGameState::Playing);
 	}
-	SwitchPlayer();
 
 	if (Board)
 	{
@@ -196,9 +196,16 @@ void ATicTacGameMode::ReStartGame()
 	{
 		PC->HideGameOver();
 		PC->ShowGameHUD();
-		PC->SetInputModeGameAndUI();
 		bIsGameActive = true;
 	}
+
+	// Switch first player for this round
+	EPlayerType NewFirstPlayer = (LastFirstPlayer == EPlayerType::Player1)
+		? EPlayerType::Player2
+		: EPlayerType::Player1;
+	LastFirstPlayer = NewFirstPlayer;
+	TurnCount = 0;
+	SetCurPlayer(NewFirstPlayer);
 }
 
 void ATicTacGameMode::StartNextGame()
@@ -254,9 +261,17 @@ void ATicTacGameMode::SwitchPlayer()
 	CurrentPlayer = (CurrentPlayer == EPlayerType::Player1)
 		? EPlayerType::Player2
 		: EPlayerType::Player1;
+	SetCurPlayer(CurrentPlayer);
+}
+
+void ATicTacGameMode::SetCurPlayer(EPlayerType Player)
+{
+	CurrentPlayer = Player;
 	ATicTacGameState* TicTacGameState = GetTicTacGameState();
-	TicTacGameState->SwitchPlayerTurn();
+	TicTacGameState->SetCurPlayer(Player);
 	ATicTacPlayerController* PC = Cast<ATicTacPlayerController>(GetWorld()->GetFirstPlayerController());
+
+	UE_LOG(LogTemp, Log, TEXT("SetCurPlayer: %d"), (int32)Player);
 
 	if (bAIEnabled && CurrentPlayer == AIPlayerType)
 	{
@@ -266,6 +281,7 @@ void ATicTacGameMode::SwitchPlayer()
 	}
 	else
 	{
+		UE_LOG(LogTemp, Log, TEXT("Player Turn"));
 		PC->SetInputModeGameAndUI();
 	}
 }
